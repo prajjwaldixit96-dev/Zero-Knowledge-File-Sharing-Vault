@@ -1,0 +1,299 @@
+{% extends 'app_base.html' %}
+{% block title %}Secure Sharing{% endblock %}
+{% block page_title %}Secure Sharing{% endblock %}
+
+{% block extra_css %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap');
+:root{--zk-primary:#00f5d4;--zk-secondary:#0066ff;--zk-accent:#7b2fff;--zk-border:rgba(0,245,212,.14);--zk-border-2:rgba(0,245,212,.28);--zk-text:#e0f7f4;--zk-muted:rgba(224,247,244,.5);--zk-success:#10b981;--zk-warning:#f59e0b;--zk-danger:#ff2d55}
+
+.page-header h1{font-family:'Orbitron',monospace;font-weight:900;font-size:1.5rem;letter-spacing:1px;animation:hIn .6s .1s both}
+.page-header p{color:var(--zk-muted);animation:hIn .5s .2s both}
+@keyframes hIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARDS */
+.zk-card{background:rgba(4,15,30,.88);border:1px solid var(--zk-border);padding:24px;position:relative;overflow:hidden;animation:cardIn .6s both;height:100%}
+@keyframes cardIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.zk-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--zk-secondary),var(--zk-primary),transparent);animation:beam 4s linear infinite}
+@keyframes beam{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
+
+.zk-card-title{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;letter-spacing:1px;margin-bottom:4px}
+.zk-card-sub{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:2px;color:var(--zk-muted);text-transform:uppercase;margin-bottom:20px}
+
+/* FORM ELEMENTS */
+.form-label-zk{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--zk-muted);margin-bottom:7px;display:block}
+.form-group-zk{margin-bottom:18px}
+.zk-select{width:100%;background:rgba(0,245,212,.04);border:1px solid var(--zk-border);color:var(--zk-text);font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:10px 14px;outline:none;cursor:pointer;transition:all .3s;-webkit-appearance:none}
+.zk-select:focus{border-color:var(--zk-primary);box-shadow:0 0 0 3px rgba(0,245,212,.1)}
+.input-wrap-zk{position:relative;display:flex;align-items:center}
+.input-icon-zk{position:absolute;left:14px;color:var(--zk-muted);font-size:.85rem;pointer-events:none;z-index:1;transition:color .3s}
+.form-input-zk{width:100%;background:rgba(0,245,212,.04);border:1px solid var(--zk-border);color:var(--zk-text);font-family:'Rajdhani',sans-serif;font-size:.95rem;padding:10px 14px 10px 40px;outline:none;transition:all .3s}
+.form-input-zk::placeholder{color:rgba(224,247,244,.3)}
+.form-input-zk:focus{border-color:var(--zk-primary);background:rgba(0,245,212,.08);box-shadow:0 0 0 3px rgba(0,245,212,.1)}
+.input-wrap-zk:focus-within .input-icon-zk{color:var(--zk-primary)}
+.pass-toggle{position:absolute;right:12px;background:none;border:none;color:var(--zk-muted);cursor:pointer;font-size:.85rem;padding:4px;transition:color .3s;z-index:2}
+.pass-toggle:hover{color:var(--zk-primary)}
+
+/* TOGGLE */
+.toggle-zk{position:relative;display:inline-flex;cursor:pointer;user-select:none;align-items:center}
+.toggle-zk input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{width:42px;height:22px;background:rgba(0,245,212,.1);border:1px solid var(--zk-border);border-radius:0;position:relative;transition:all .3s}
+.toggle-track::after{content:'';position:absolute;width:14px;height:14px;background:var(--zk-muted);top:3px;left:3px;transition:all .3s}
+.toggle-zk input:checked+.toggle-track{background:rgba(0,245,212,.2);border-color:var(--zk-primary)}
+.toggle-zk input:checked+.toggle-track::after{left:21px;background:var(--zk-primary);box-shadow:0 0 8px var(--zk-primary)}
+
+/* FILE PREVIEW */
+.file-preview-zk{background:rgba(0,245,212,.05);border:1px solid var(--zk-border-2);padding:14px 16px;margin-bottom:18px;animation:previewIn .4s ease}
+@keyframes previewIn{from{opacity:0;transform:scaleY(.95)}to{opacity:1;transform:scaleY(1)}}
+.preview-icon-zk{width:50px;height:50px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;clip-path:polygon(8px 0%,100% 0%,100% calc(100% - 8px),calc(100% - 8px) 100%,0% 100%,0% 8px)}
+.preview-name-zk{font-weight:700;font-size:.95rem;margin-bottom:2px}
+.preview-size-zk{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--zk-muted)}
+.enc-tag-zk{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1px;padding:3px 10px;border:1px solid rgba(0,245,212,.25);color:var(--zk-primary);background:rgba(0,245,212,.07);display:inline-flex;align-items:center;gap:5px}
+
+/* GENERATED LINK OUTPUT */
+.link-out-zk{background:rgba(0,245,212,.04);border:1px solid var(--zk-primary);padding:14px;display:flex;align-items:center;justify-content:space-between;gap:10px;animation:linkIn .5s ease;position:relative;overflow:hidden}
+.link-out-zk::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(0,245,212,.05),transparent);animation:linkShimmer 3s linear infinite}
+@keyframes linkShimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+@keyframes linkIn{from{opacity:0;transform:scaleY(.9)}to{opacity:1;transform:scaleY(1)}}
+.link-text-zk{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--zk-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.link-copy-btn{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:1px;padding:6px 14px;background:rgba(0,245,212,.12);border:1px solid var(--zk-border-2);color:var(--zk-primary);cursor:pointer;transition:all .3s;text-transform:uppercase;flex-shrink:0}
+.link-copy-btn:hover{background:rgba(0,245,212,.22);box-shadow:0 0 12px rgba(0,245,212,.2)}
+
+/* BADGE */
+.zk-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1.5px;padding:3px 10px;border:1px solid;text-transform:uppercase}
+.zk-badge.blue{border-color:rgba(0,102,255,.35);color:var(--zk-secondary);background:rgba(0,102,255,.08)}
+.zk-badge.amber{border-color:rgba(245,158,11,.35);color:var(--zk-warning);background:rgba(245,158,11,.08)}
+.zk-badge.green{border-color:rgba(16,185,129,.35);color:var(--zk-success);background:rgba(16,185,129,.08)}
+.zk-badge.danger{border-color:rgba(255,45,85,.35);color:var(--zk-danger);background:rgba(255,45,85,.08)}
+.zk-badge.muted{border-color:var(--zk-border);color:var(--zk-muted);background:transparent}
+
+/* SHARE LINK ITEMS */
+.share-link-zk{padding:14px 0;border-bottom:1px solid rgba(0,245,212,.06);transition:all .3s;animation:itemIn .4s both}
+.share-link-zk:last-child{border-bottom:none}
+.share-link-zk:hover{padding-left:6px}
+.share-link-zk.expired{opacity:.5}
+@keyframes itemIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:translateX(0)}}
+
+.link-token{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--zk-muted);margin-top:2px}
+.link-fname{font-size:.88rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+
+/* ACTION BTNS */
+.icon-btn{background:transparent;border:1px solid var(--zk-border);color:var(--zk-muted);width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:.75rem;transition:all .3s;text-decoration:none}
+.icon-btn:hover{border-color:var(--zk-primary);color:var(--zk-primary);background:rgba(0,245,212,.08)}
+.icon-btn.danger:hover{border-color:var(--zk-danger);color:var(--zk-danger);background:rgba(255,45,85,.08)}
+
+/* BUTTONS */
+.btn-zk-primary{background:linear-gradient(135deg,var(--zk-primary),var(--zk-secondary));color:#020b18!important;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:12px 24px;border:none;cursor:pointer;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);transition:all .3s;display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center;position:relative;overflow:hidden}
+.btn-zk-primary:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,245,212,.3);color:#020b18!important}
+.btn-zk-primary::before{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:skewX(-20deg);transition:left .5s}
+.btn-zk-primary:hover::before{left:150%}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:36px 20px;color:var(--zk-muted)}
+.empty-state i{font-size:2rem;display:block;margin-bottom:10px;opacity:.35}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Secure Sharing</h1>
+    <p>Zero-knowledge encrypted share links with expiry, password protection, and download limits</p>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- LINK GENERATOR -->
+  <div class="col-lg-7" style="animation-delay:.1s">
+    <div class="zk-card">
+      <div class="zk-card-title">Generate Share Link</div>
+      <div class="zk-card-sub">Configure access settings</div>
+
+      <!-- File selector -->
+      <div class="form-group-zk">
+        <label class="form-label-zk">Select File</label>
+        <select class="zk-select" id="fileSelector" onchange="updateFilePreview()">
+          <option value="">— Choose a file to share —</option>
+          {% for file in files %}
+          <option value="{{ file.id }}" data-name="{{ file.name }}" data-size="{{ file.size_display }}" data-type="{{ file.file_type }}" {% if selected_file and selected_file.id == file.id %}selected{% endif %}>{{ file.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- File preview -->
+      <div id="filePreview" class="file-preview-zk" style="{% if not selected_file %}display:none{% endif %}">
+        <div class="d-flex align-items-center gap-3">
+          <div class="preview-icon-zk" id="previewIcon" style="background:rgba(0,102,255,.12);color:#0066ff"><i class="fa-solid fa-file" id="previewIconFA"></i></div>
+          <div class="flex-grow-1">
+            <div class="preview-name-zk" id="previewName">{% if selected_file %}{{ selected_file.name }}{% endif %}</div>
+            <div class="preview-size-zk" id="previewSize">{% if selected_file %}{{ selected_file.size_display }}{% endif %}</div>
+          </div>
+          <span class="enc-tag-zk"><i class="fa-solid fa-lock"></i> AES-256</span>
+        </div>
+      </div>
+
+      <!-- Options row -->
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="form-label-zk">Link Expiry</label>
+          <select class="zk-select" id="expirySelect">
+            <option value="">Never expires</option>
+            <option value="1h">1 Hour</option>
+            <option value="24h">24 Hours</option>
+            <option value="7d">7 Days</option>
+            <option value="30d">30 Days</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label-zk">Max Downloads</label>
+          <select class="zk-select" id="maxDownloads">
+            <option value="0">Unlimited</option>
+            <option value="1">1 download</option>
+            <option value="5">5 downloads</option>
+            <option value="10">10 downloads</option>
+            <option value="25">25 downloads</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Password toggle -->
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <div>
+          <div style="font-size:.9rem;font-weight:600">Password Protection</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--zk-muted)">Require password to access link</div>
+        </div>
+        <label class="toggle-zk">
+          <input type="checkbox" id="passToggle" onchange="togglePassField()">
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+      <div id="passField" class="form-group-zk" style="display:none">
+        <div class="input-wrap-zk">
+          <i class="fa-solid fa-lock input-icon-zk"></i>
+          <input type="password" class="form-input-zk" id="sharePassword" placeholder="Set a link password">
+          <button type="button" class="pass-toggle" onclick="togglePass('sharePassword')"><i class="fa-solid fa-eye"></i></button>
+        </div>
+      </div>
+
+      <!-- Allow preview -->
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <div style="font-size:.9rem;font-weight:600">Allow Preview</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--zk-muted)">Recipients can preview without downloading</div>
+        </div>
+        <label class="toggle-zk">
+          <input type="checkbox" id="allowPreview" checked>
+          <span class="toggle-track"></span>
+        </label>
+      </div>
+
+      <button class="btn-zk-primary" onclick="generateLink()">
+        <i class="fa-solid fa-link"></i> Generate Secure Link
+      </button>
+
+      <!-- Link output -->
+      <div id="linkOutput" style="display:none;margin-top:16px">
+        <div class="link-out-zk mb-2">
+          <span class="link-text-zk" id="shareLinkText"></span>
+          <button class="link-copy-btn" onclick="copyLink()"><i class="fa-solid fa-copy"></i> Copy</button>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <span class="zk-badge blue" id="linkExpiry"></span>
+          <span class="zk-badge amber" id="linkPassBadge" style="display:none"><i class="fa-solid fa-lock"></i> Password</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE LINKS -->
+  <div class="col-lg-5" style="animation-delay:.2s">
+    <div class="zk-card">
+      <div class="zk-card-title">Active Share Links</div>
+      <div class="zk-card-sub">{{ share_links|length }} active link{{ share_links|length|pluralize }}</div>
+
+      {% if share_links %}
+        {% for link in share_links %}
+        <div class="share-link-zk {% if not link.is_valid %}expired{% endif %}" id="link_{{ link.id }}" style="animation-delay:{{ forloop.counter0 }}0ms">
+          <div class="d-flex align-items-start justify-content-between gap-2">
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="link-fname">{{ link.file.name|truncatechars:28 }}</div>
+              <div class="link-token">/s/{{ link.token|slice:":12" }}...</div>
+              <div class="d-flex gap-1 mt-2 flex-wrap">
+                {% if link.expires_at %}
+                  <span class="zk-badge {% if link.is_valid %}blue{% else %}danger{% endif %}">{% if link.is_valid %}{{ link.expires_at|timesince }} left{% else %}Expired{% endif %}</span>
+                {% else %}
+                  <span class="zk-badge muted">No expiry</span>
+                {% endif %}
+                {% if link.has_password %}<span class="zk-badge amber"><i class="fa-solid fa-lock"></i> Password</span>{% endif %}
+                <span class="zk-badge green">{{ link.download_count }} dl</span>
+              </div>
+            </div>
+            <div class="d-flex gap-1 flex-shrink-0">
+              <button class="icon-btn" title="Copy" onclick="copyToClipboard('{{ request.scheme }}://{{ request.get_host }}{{ link.public_url }}')"><i class="fa-solid fa-copy"></i></button>
+              <button class="icon-btn danger" title="Revoke" onclick="revokeLink({{ link.id }})"><i class="fa-solid fa-link-slash"></i></button>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+      <div class="empty-state">
+        <i class="fa-solid fa-link"></i>
+        No share links yet
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const typeIconMap={pdf:['fa-file-pdf','#ff2d55','rgba(255,45,85,.12)'],img:['fa-file-image','#00f5d4','rgba(0,245,212,.12)'],doc:['fa-file-word','#0066ff','rgba(0,102,255,.12)'],zip:['fa-file-zipper','#f59e0b','rgba(245,158,11,.12)'],vid:['fa-file-video','#7b2fff','rgba(123,47,255,.12)'],other:['fa-file','#0066ff','rgba(0,102,255,.12)']};
+
+function updateFilePreview(){
+  const sel=document.getElementById('fileSelector');
+  const opt=sel.options[sel.selectedIndex];
+  const preview=document.getElementById('filePreview');
+  if(!opt.value){preview.style.display='none';return;}
+  const[icon,color,bg]=typeIconMap[opt.dataset.type]||typeIconMap.other;
+  document.getElementById('previewName').textContent=opt.dataset.name;
+  document.getElementById('previewSize').textContent=opt.dataset.size;
+  document.getElementById('previewIconFA').className=`fa-solid ${icon}`;
+  const pi=document.getElementById('previewIcon');
+  pi.style.background=bg; pi.style.color=color;
+  preview.style.display='';
+}
+
+function togglePassField(){document.getElementById('passField').style.display=document.getElementById('passToggle').checked?'':'none'}
+
+async function generateLink(){
+  const fileId=document.getElementById('fileSelector').value;
+  if(!fileId)return showToast('Please select a file first','warning');
+  const payload={file_id:fileId,expiry:document.getElementById('expirySelect').value,password:document.getElementById('passToggle').checked?document.getElementById('sharePassword').value:'',max_downloads:document.getElementById('maxDownloads').value,allow_preview:document.getElementById('allowPreview').checked};
+  try{
+    const resp=await fetch('{% url "generate_share_link" %}',{method:'POST',headers:{'X-CSRFToken':getCsrfToken(),'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const data=await resp.json();
+    if(data.status==='ok'){
+      document.getElementById('shareLinkText').textContent=data.url;
+      document.getElementById('linkExpiry').textContent=data.expires_at?`Expires: ${new Date(data.expires_at).toLocaleString()}`:'No expiry';
+      document.getElementById('linkPassBadge').style.display=data.has_password?'':'none';
+      document.getElementById('linkOutput').style.display='';
+      showToast('Secure link generated!','success');
+    } else showToast(data.message||'Failed to generate','danger');
+  }catch(e){showToast('Request failed. Try again.','danger')}
+}
+
+function copyLink(){copyToClipboard(document.getElementById('shareLinkText').textContent)}
+function copyToClipboard(text){navigator.clipboard?.writeText(text).then(()=>showToast('Link copied!','success')).catch(()=>showToast('Copy failed','warning'))}
+
+async function revokeLink(id){
+  if(!confirm('Revoke this share link?'))return;
+  const resp=await fetch(`/api/share/${id}/revoke/`,{method:'POST',headers:{'X-CSRFToken':getCsrfToken()}});
+  const data=await resp.json();
+  if(data.status==='ok'){document.getElementById('link_'+id)?.remove();showToast('Link revoked','success')}
+}
+updateFilePreview();
+</script>
+{% endblock %}

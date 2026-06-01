@@ -1,0 +1,313 @@
+{% extends 'app_base.html' %}
+{% block title %}My Files{% endblock %}
+{% block page_title %}My Files{% endblock %}
+
+{% block extra_css %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap');
+:root{
+  --zk-primary:#00f5d4;--zk-secondary:#0066ff;--zk-accent:#7b2fff;
+  --zk-dark:#020b18;--zk-border:rgba(0,245,212,.14);--zk-border-2:rgba(0,245,212,.28);
+  --zk-text:#e0f7f4;--zk-muted:rgba(224,247,244,.5);
+  --zk-success:#10b981;--zk-warning:#f59e0b;--zk-danger:#ff2d55;
+}
+
+/* HEADER */
+.page-header h1{font-family:'Orbitron',monospace;font-weight:900;font-size:1.5rem;letter-spacing:1px;animation:slideDown .6s .1s both}
+.page-header p{color:var(--zk-muted);animation:slideDown .5s .2s both}
+@keyframes slideDown{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:translateY(0)}}
+
+/* MAIN CARD */
+.files-card{background:rgba(4,15,30,.88);border:1px solid var(--zk-border);padding:24px;position:relative;overflow:hidden;animation:fadeUp .7s .2s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.files-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--zk-primary),var(--zk-secondary),transparent);animation:beam 4s linear infinite}
+@keyframes beam{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
+
+/* SEARCH + FILTERS */
+.zk-search-wrap{position:relative;flex:1;max-width:300px}
+.zk-search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--zk-muted);font-size:.85rem;pointer-events:none}
+.zk-search-wrap input{width:100%;background:rgba(0,245,212,.04);border:1px solid var(--zk-border);color:var(--zk-text);font-family:'Rajdhani',sans-serif;font-size:.9rem;padding:9px 14px 9px 36px;outline:none;transition:all .3s}
+.zk-search-wrap input:focus{border-color:var(--zk-primary);background:rgba(0,245,212,.08);box-shadow:0 0 0 3px rgba(0,245,212,.1)}
+.zk-search-wrap input::placeholder{color:rgba(224,247,244,.3)}
+
+.zk-select{background:rgba(0,245,212,.04);border:1px solid var(--zk-border);color:var(--zk-text);font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:9px 14px;outline:none;cursor:pointer;transition:all .3s;-webkit-appearance:none}
+.zk-select:focus{border-color:var(--zk-primary)}
+
+/* VIEW TOGGLE */
+.view-toggle-zk{display:flex;border:1px solid var(--zk-border);overflow:hidden}
+.view-btn-zk{background:transparent;border:none;color:var(--zk-muted);padding:8px 14px;cursor:pointer;transition:all .3s;font-size:.85rem}
+.view-btn-zk.active{background:rgba(0,245,212,.12);color:var(--zk-primary)}
+.view-btn-zk:hover:not(.active){color:var(--zk-primary)}
+
+/* FILE TABLE */
+.zk-table{width:100%;border-collapse:collapse}
+.zk-table thead th{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:2px;color:var(--zk-muted);text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--zk-border);white-space:nowrap;font-weight:400}
+.zk-table tbody tr{border-bottom:1px solid rgba(0,245,212,.04);transition:all .3s;animation:rowIn .4s both}
+.zk-table tbody tr:hover{background:rgba(0,245,212,.04);padding-left:6px}
+.zk-table tbody tr:last-child{border-bottom:none}
+.zk-table td{padding:13px 14px;font-size:.9rem;vertical-align:middle}
+@keyframes rowIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+{% for i in "123456789"|make_list %}.zk-table tbody tr:nth-child({{i}}){animation-delay:{{i}}0ms}{% endfor %}
+
+/* FILE ICON */
+.zk-file-icon{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;clip-path:polygon(6px 0%,100% 0%,100% calc(100% - 6px),calc(100% - 6px) 100%,0% 100%,0% 6px)}
+
+/* BADGE */
+.zk-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1.5px;padding:3px 8px;border:1px solid;text-transform:uppercase}
+.zk-badge.pdf   {border-color:rgba(255,45,85,.35);color:#ff2d55;background:rgba(255,45,85,.08)}
+.zk-badge.img   {border-color:rgba(0,245,212,.35);color:#00f5d4;background:rgba(0,245,212,.08)}
+.zk-badge.zip   {border-color:rgba(245,158,11,.35);color:#f59e0b;background:rgba(245,158,11,.08)}
+.zk-badge.doc   {border-color:rgba(0,102,255,.35);color:#0066ff;background:rgba(0,102,255,.08)}
+.zk-badge.vid   {border-color:rgba(123,47,255,.35);color:#7b2fff;background:rgba(123,47,255,.08)}
+.zk-badge.other {border-color:var(--zk-border);color:var(--zk-muted);background:transparent}
+
+/* ENC BADGE */
+.enc-badge-zk{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1px;color:var(--zk-primary);background:rgba(0,245,212,.07);border:1px solid rgba(0,245,212,.2);padding:2px 8px;display:inline-flex;align-items:center;gap:4px}
+
+/* ACTION BTNS */
+.action-btn{background:transparent;border:1px solid var(--zk-border);color:var(--zk-muted);width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-size:.75rem;transition:all .3s;text-decoration:none}
+.action-btn:hover{border-color:var(--zk-primary);color:var(--zk-primary);background:rgba(0,245,212,.08)}
+.action-btn.danger:hover{border-color:var(--zk-danger);color:var(--zk-danger);background:rgba(255,45,85,.08)}
+
+/* GRID VIEW */
+.file-grid-zk{background:rgba(0,245,212,.04);border:1px solid var(--zk-border);padding:18px 12px;text-align:center;transition:all .3s;cursor:pointer;position:relative;overflow:hidden;animation:fadeUp .5s both}
+.file-grid-zk::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--zk-primary),transparent);transform:scaleX(0);transition:transform .3s}
+.file-grid-zk:hover{border-color:var(--zk-primary);transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,245,212,.12)}
+.file-grid-zk:hover::before{transform:scaleX(1)}
+.file-grid-icon-zk{width:46px;height:46px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;margin:0 auto 10px;clip-path:polygon(8px 0%,100% 0%,100% calc(100% - 8px),calc(100% - 8px) 100%,0% 100%,0% 8px)}
+.file-grid-name-zk{font-size:.78rem;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-grid-size-zk{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--zk-muted);margin-bottom:10px}
+
+/* BUTTONS */
+.btn-zk-primary{background:linear-gradient(135deg,var(--zk-primary),var(--zk-secondary));color:#020b18!important;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:10px 22px;border:none;cursor:pointer;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);transition:all .3s;display:inline-flex;align-items:center;gap:8px;text-decoration:none;position:relative;overflow:hidden}
+.btn-zk-primary:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(0,245,212,.3);color:#020b18!important}
+.btn-zk-primary::before{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:skewX(-20deg);transition:left .5s}
+.btn-zk-primary:hover::before{left:150%}
+.btn-zk-ghost{background:transparent;border:1px solid var(--zk-border-2);color:var(--zk-text);font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:8px 16px;cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn-zk-ghost:hover{border-color:var(--zk-primary);color:var(--zk-primary)}
+.btn-zk-danger{background:rgba(255,45,85,.1);border:1px solid rgba(255,45,85,.3);color:var(--zk-danger);font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:8px 16px;cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;gap:6px}
+.btn-zk-danger:hover{background:rgba(255,45,85,.2);box-shadow:0 0 12px rgba(255,45,85,.2)}
+
+/* PAGINATION */
+.zk-page-btn{font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:7px 14px;border:1px solid var(--zk-border);background:transparent;color:var(--zk-text);cursor:pointer;transition:all .3s;text-decoration:none}
+.zk-page-btn:hover{border-color:var(--zk-primary);color:var(--zk-primary)}
+.zk-page-btn.current{border-color:var(--zk-primary);color:var(--zk-primary);background:rgba(0,245,212,.08)}
+
+/* MODALS */
+.zk-modal-overlay{position:fixed;inset:0;background:rgba(2,11,24,.85);backdrop-filter:blur(6px);z-index:2000;display:none;align-items:center;justify-content:center}
+.zk-modal-overlay.open{display:flex;animation:modalIn .3s ease}
+@keyframes modalIn{from{opacity:0}to{opacity:1}}
+.zk-modal-box{background:rgba(4,15,30,.96);border:1px solid var(--zk-border);padding:32px;max-width:400px;width:90%;position:relative;animation:modalBoxIn .3s ease}
+@keyframes modalBoxIn{from{transform:scale(.94) translateY(10px)}to{transform:scale(1) translateY(0)}}
+.zk-modal-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--zk-danger),transparent)}
+.zk-modal-title{font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;margin-bottom:10px}
+.zk-modal-desc{color:var(--zk-muted);font-size:.9rem;line-height:1.6;margin-bottom:24px}
+.zk-modal-icon{width:56px;height:56px;background:rgba(255,45,85,.1);border:1px solid rgba(255,45,85,.25);display:flex;align-items:center;justify-content:center;font-size:1.4rem;color:var(--zk-danger);margin-bottom:16px}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:48px 20px;color:var(--zk-muted)}
+.empty-state i{font-size:2.5rem;display:block;margin-bottom:12px;opacity:.4}
+.zk-link{color:var(--zk-primary);text-decoration:none;font-weight:600;transition:all .3s}
+.zk-link:hover{color:#fff;text-shadow:0 0 10px var(--zk-primary)}
+.form-label-zk{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--zk-muted);margin-bottom:7px;display:block}
+.form-input-zk{width:100%;background:rgba(0,245,212,.04);border:1px solid var(--zk-border);color:var(--zk-text);font-family:'Rajdhani',sans-serif;font-size:.95rem;padding:10px 14px;outline:none;transition:all .3s}
+.form-input-zk:focus{border-color:var(--zk-primary);box-shadow:0 0 0 3px rgba(0,245,212,.1)}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header d-flex align-items-start justify-content-between flex-wrap gap-3">
+  <div class="page-header-left">
+    <h1>My Files</h1>
+    <p>{{ total_files }} file{{ total_files|pluralize }} · {{ total_size }} used · All encrypted</p>
+  </div>
+  <a href="{% url 'upload' %}" class="btn-zk-primary"><i class="fa-solid fa-cloud-arrow-up"></i> Upload</a>
+</div>
+
+<div class="files-card">
+
+  <!-- FILTERS -->
+  <form method="get" class="d-flex align-items-center flex-wrap gap-2 mb-4" id="filterForm">
+    <div class="zk-search-wrap">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" name="q" placeholder="Search files..." value="{{ search_query }}">
+    </div>
+    <select name="type" class="zk-select" onchange="this.form.submit()">
+      <option value="all" {% if selected_type == 'all' or not selected_type %}selected{% endif %}>All types</option>
+      <option value="pdf"  {% if selected_type == 'pdf'  %}selected{% endif %}>PDF</option>
+      <option value="img"  {% if selected_type == 'img'  %}selected{% endif %}>Images</option>
+      <option value="doc"  {% if selected_type == 'doc'  %}selected{% endif %}>Documents</option>
+      <option value="zip"  {% if selected_type == 'zip'  %}selected{% endif %}>Archives</option>
+      <option value="vid"  {% if selected_type == 'vid'  %}selected{% endif %}>Videos</option>
+    </select>
+    <select name="sort" class="zk-select" onchange="this.form.submit()">
+      <option value="-uploaded_at" {% if selected_sort == '-uploaded_at' %}selected{% endif %}>Date modified</option>
+      <option value="name"   {% if selected_sort == 'name'   %}selected{% endif %}>Name A–Z</option>
+      <option value="-name"  {% if selected_sort == '-name'  %}selected{% endif %}>Name Z–A</option>
+      <option value="-size"  {% if selected_sort == '-size'  %}selected{% endif %}>Size ↓</option>
+      <option value="size"   {% if selected_sort == 'size'   %}selected{% endif %}>Size ↑</option>
+    </select>
+    <div class="view-toggle-zk ms-auto">
+      <button type="button" class="view-btn-zk active" id="listViewBtn" onclick="setView('list')"><i class="fa-solid fa-list"></i></button>
+      <button type="button" class="view-btn-zk" id="gridViewBtn" onclick="setView('grid')"><i class="fa-solid fa-grip"></i></button>
+    </div>
+  </form>
+
+  {% if files %}
+
+  <!-- LIST VIEW -->
+  <div id="listView">
+    <div class="table-responsive">
+      <table class="zk-table">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="selectAll" style="accent-color:var(--zk-primary)"></th>
+            <th>Name</th><th>Size</th><th>Type</th><th>Modified</th><th>Encryption</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for file in files %}
+          <tr data-file-id="{{ file.id }}">
+            <td><input type="checkbox" class="file-checkbox" style="accent-color:var(--zk-primary)"></td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <div class="zk-file-icon"
+                  style="background:rgba({% if file.file_type == 'pdf' %}255,45,85{% elif file.file_type == 'img' %}0,245,212{% elif file.file_type == 'zip' %}245,158,11{% elif file.file_type == 'vid' %}123,47,255{% else %}0,102,255{% endif %},.12);color:{% if file.file_type == 'pdf' %}#ff2d55{% elif file.file_type == 'img' %}#00f5d4{% elif file.file_type == 'zip' %}#f59e0b{% elif file.file_type == 'vid' %}#7b2fff{% else %}#0066ff{% endif %}">
+                  <i class="fa-solid {{ file.type_icon_class }}"></i>
+                </div>
+                <span class="file-name-cell" data-id="{{ file.id }}" style="font-weight:600;font-size:.9rem">{{ file.name }}</span>
+              </div>
+            </td>
+            <td style="color:var(--zk-muted);font-family:'JetBrains Mono',monospace;font-size:.75rem">{{ file.size_display }}</td>
+            <td><span class="zk-badge {{ file.file_type }}">{{ file.file_type|upper }}</span></td>
+            <td style="color:var(--zk-muted);font-family:'JetBrains Mono',monospace;font-size:.72rem">{{ file.uploaded_at|timesince }} ago</td>
+            <td><span class="enc-badge-zk"><i class="fa-solid fa-lock"></i>{{ file.encryption_algo }}</span></td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="{% url 'file_download' file.id %}" class="action-btn" title="Download"><i class="fa-solid fa-download"></i></a>
+                <a href="{% url 'share' %}?file={{ file.id }}" class="action-btn" title="Share"><i class="fa-solid fa-share-nodes"></i></a>
+                <button class="action-btn" title="Rename" onclick="startRename({{ file.id }},'{{ file.name|escapejs }}')"><i class="fa-solid fa-pencil"></i></button>
+                <button class="action-btn danger" title="Delete" onclick="openDeleteModal({{ file.id }},'{{ file.name|escapejs }}')"><i class="fa-solid fa-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GRID VIEW -->
+  <div id="gridView" style="display:none">
+    <div class="row g-3">
+      {% for file in files %}
+      <div class="col-6 col-sm-4 col-md-3 col-lg-2">
+        <div class="file-grid-zk" style="animation-delay:{{ forloop.counter0 }}0ms">
+          <div class="file-grid-icon-zk"
+            style="background:rgba({% if file.file_type == 'pdf' %}255,45,85{% elif file.file_type == 'img' %}0,245,212{% elif file.file_type == 'zip' %}245,158,11{% elif file.file_type == 'vid' %}123,47,255{% else %}0,102,255{% endif %},.12);color:{% if file.file_type == 'pdf' %}#ff2d55{% elif file.file_type == 'img' %}#00f5d4{% elif file.file_type == 'zip' %}#f59e0b{% elif file.file_type == 'vid' %}#7b2fff{% else %}#0066ff{% endif %}">
+            <i class="fa-solid {{ file.type_icon_class }}"></i>
+          </div>
+          <div class="file-grid-name-zk" title="{{ file.name }}">{{ file.name|truncatechars:18 }}</div>
+          <div class="file-grid-size-zk">{{ file.size_display }}</div>
+          <div class="d-flex justify-content-center gap-1">
+            <a href="{% url 'file_download' file.id %}" class="action-btn" title="Download"><i class="fa-solid fa-download"></i></a>
+            <button class="action-btn danger" onclick="openDeleteModal({{ file.id }},'{{ file.name|escapejs }}')"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- PAGINATION -->
+  {% if files.has_other_pages %}
+  <div class="d-flex justify-content-center gap-2 mt-4">
+    {% if files.has_previous %}<a href="?page={{ files.previous_page_number }}&q={{ search_query }}&type={{ selected_type }}&sort={{ selected_sort }}" class="zk-page-btn">‹ Prev</a>{% endif %}
+    <span class="zk-page-btn current">{{ files.number }} / {{ files.paginator.num_pages }}</span>
+    {% if files.has_next %}<a href="?page={{ files.next_page_number }}&q={{ search_query }}&type={{ selected_type }}&sort={{ selected_sort }}" class="zk-page-btn">Next ›</a>{% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-folder-open"></i>
+    {% if search_query %}No files matching "{{ search_query }}"{% else %}No files yet. <a href="{% url 'upload' %}" class="zk-link">Upload your first file →</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+
+<!-- DELETE MODAL -->
+<div class="zk-modal-overlay" id="deleteModal">
+  <div class="zk-modal-box">
+    <div class="zk-modal-icon"><i class="fa-solid fa-trash"></i></div>
+    <div class="zk-modal-title">Delete File?</div>
+    <div class="zk-modal-desc">This action is permanent and cannot be undone. The encrypted file will be removed from your vault.</div>
+    <div class="d-flex gap-3">
+      <button class="btn-zk-ghost flex-fill" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-zk-danger flex-fill" id="confirmDeleteBtn" onclick="confirmDelete()"><i class="fa-solid fa-trash"></i> Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- RENAME MODAL -->
+<div class="zk-modal-overlay" id="renameModal">
+  <div class="zk-modal-box" style="">
+    <div class="zk-modal-title" style="color:var(--zk-primary)">Rename File</div>
+    <div class="mb-3 mt-3">
+      <label class="form-label-zk">New filename</label>
+      <input type="text" class="form-input-zk" id="renameInput" placeholder="Enter new filename">
+    </div>
+    <div class="d-flex gap-3">
+      <button class="btn-zk-ghost flex-fill" onclick="document.getElementById('renameModal').classList.remove('open')">Cancel</button>
+      <button class="btn-zk-primary flex-fill" style="clip-path:none;justify-content:center" onclick="doRename()"><i class="fa-solid fa-check"></i> Rename</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let deleteTargetId=null, renameTargetId=null;
+
+function setView(type){
+  document.getElementById('listView').style.display = type==='list'?'':'none';
+  document.getElementById('gridView').style.display = type==='grid'?'':'none';
+  document.getElementById('listViewBtn').classList.toggle('active', type==='list');
+  document.getElementById('gridViewBtn').classList.toggle('active', type==='grid');
+}
+
+function openDeleteModal(id,name){ deleteTargetId=id; document.getElementById('deleteModal').classList.add('open'); }
+function closeDeleteModal(){ document.getElementById('deleteModal').classList.remove('open'); deleteTargetId=null; }
+
+async function confirmDelete(){
+  if(!deleteTargetId)return;
+  const resp=await fetch(`/files/${deleteTargetId}/delete/`,{method:'POST',headers:{'X-CSRFToken':getCsrfToken()}});
+  const data=await resp.json();
+  if(data.status==='ok'){
+    document.querySelector(`tr[data-file-id="${deleteTargetId}"]`)?.remove();
+    showToast(data.message,'success'); closeDeleteModal();
+  } else showToast(data.message||'Delete failed','danger');
+}
+
+function startRename(id,name){ renameTargetId=id; document.getElementById('renameInput').value=name; document.getElementById('renameModal').classList.add('open'); }
+
+async function doRename(){
+  const name=document.getElementById('renameInput').value.trim();
+  if(!name)return showToast('Name cannot be empty','warning');
+  const resp=await fetch(`/files/${renameTargetId}/rename/`,{method:'POST',headers:{'X-CSRFToken':getCsrfToken(),'Content-Type':'application/json'},body:JSON.stringify({name})});
+  const data=await resp.json();
+  if(data.status==='ok'){
+    const cell=document.querySelector(`.file-name-cell[data-id="${renameTargetId}"]`);
+    if(cell)cell.textContent=data.name;
+    showToast('File renamed','success'); document.getElementById('renameModal').classList.remove('open');
+  } else showToast(data.message,'danger');
+}
+
+document.getElementById('selectAll')?.addEventListener('change',function(){
+  document.querySelectorAll('.file-checkbox').forEach(cb=>cb.checked=this.checked);
+});
+document.getElementById('deleteModal')?.addEventListener('click',e=>{ if(e.target===e.currentTarget)closeDeleteModal(); });
+document.getElementById('renameModal')?.addEventListener('click',e=>{ if(e.target===e.currentTarget)document.getElementById('renameModal').classList.remove('open'); });
+</script>
+{% endblock %}

@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZK Vault — Zero Knowledge File Sharing</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+<style>
+  :root {
+    --zk-primary: #00f5d4;
+    --zk-secondary: #0066ff;
+    --zk-accent: #7b2fff;
+    --zk-danger: #ff2d55;
+    --zk-dark: #020b18;
+    --zk-card: rgba(0, 245, 212, 0.04);
+    --zk-border: rgba(0, 245, 212, 0.15);
+    --zk-glow: 0 0 30px rgba(0, 245, 212, 0.3);
+    --zk-glow-blue: 0 0 30px rgba(0, 102, 255, 0.4);
+    --zk-text: #e0f7f4;
+    --zk-muted: rgba(224, 247, 244, 0.5);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--zk-dark);
+    color: var(--zk-text);
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* CUSTOM CURSOR */
+  .cursor {
+    width: 12px; height: 12px;
+    background: var(--zk-primary);
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 99999;
+    transition: transform 0.1s;
+    box-shadow: 0 0 15px var(--zk-primary), 0 0 30px rgba(0,245,212,0.5);
+  }
+  .cursor-ring {
+    width: 40px; height: 40px;
+    border: 1px solid rgba(0,245,212,0.4);
+    border-radius: 50%;
+    position: fixed;
+    pointer-events: none;
+    z-index: 99998;
+    transition: all 0.15s ease;
+  }
+
+  /* ANIMATED BACKGROUND */
+  .bg-grid {
+    position: fixed; inset: 0; z-index: 0;
+    background-image:
+      linear-gradient(rgba(0,245,212,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,212,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    animation: gridPulse 8s ease-in-out infinite;
+  }
+  @keyframes gridPulse {
+    0%,100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+
+  .bg-orbs {
+    position: fixed; inset: 0; z-index: 0; overflow: hidden;
+  }
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    animation: orbFloat linear infinite;
+    opacity: 0.15;
+  }
+  .orb-1 { width: 500px; height: 500px; background: var(--zk-primary); top: -200px; left: -100px; animation-duration: 20s; }
+  .orb-2 { width: 400px; height: 400px; background: var(--zk-secondary); bottom: -150px; right: -100px; animation-duration: 25s; animation-delay: -10s; }
+  .orb-3 { width: 300px; height: 300px; background: var(--zk-accent); top: 40%; left: 50%; animation-duration: 18s; animation-delay: -5s; }
+  @keyframes orbFloat {
+    0% { transform: translate(0,0) scale(1); }
+    33% { transform: translate(40px, -30px) scale(1.1); }
+    66% { transform: translate(-20px, 40px) scale(0.95); }
+    100% { transform: translate(0,0) scale(1); }
+  }
+
+  .noise-overlay {
+    position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+    padding: 20px 0;
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid transparent;
+    transition: all 0.4s;
+  }
+  nav.scrolled {
+    background: rgba(2, 11, 24, 0.9);
+    border-bottom-color: var(--zk-border);
+    padding: 12px 0;
+  }
+  .nav-logo {
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 1.4rem;
+    color: var(--zk-primary);
+    text-decoration: none;
+    display: flex; align-items: center; gap: 10px;
+    letter-spacing: 2px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--zk-primary), var(--zk-secondary));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    animation: logoPulse 3s ease-in-out infinite;
+  }
+  @keyframes logoPulse {
+    0%,100% { box-shadow: 0 0 10px rgba(0,245,212,0.4); }
+    50% { box-shadow: 0 0 25px rgba(0,245,212,0.8), 0 0 50px rgba(0,245,212,0.3); }
+  }
+  .nav-link-custom {
+    color: var(--zk-muted);
+    text-decoration: none;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: color 0.3s;
+    position: relative;
+  }
+  .nav-link-custom::after {
+    content: '';
+    position: absolute; bottom: -4px; left: 0; right: 0; height: 1px;
+    background: var(--zk-primary);
+    transform: scaleX(0);
+    transition: transform 0.3s;
+  }
+  .nav-link-custom:hover { color: var(--zk-primary); }
+  .nav-link-custom:hover::after { transform: scaleX(1); }
+
+  .btn-nav {
+    background: transparent;
+    border: 1px solid var(--zk-primary);
+    color: var(--zk-primary);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.75rem;
+    padding: 8px 20px;
+    letter-spacing: 2px;
+    text-decoration: none;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+  .btn-nav:hover {
+    background: var(--zk-primary);
+    color: var(--zk-dark);
+    box-shadow: var(--zk-glow);
+  }
+
+  /* HERO */
+  .hero {
+    position: relative; z-index: 2;
+    min-height: 100vh;
+    display: flex; align-items: center;
+    padding: 120px 0 60px;
+    overflow: hidden;
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    border: 1px solid rgba(0,245,212,0.3);
+    background: rgba(0,245,212,0.06);
+    padding: 6px 16px;
+    border-radius: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--zk-primary);
+    letter-spacing: 2px;
+    margin-bottom: 30px;
+    opacity: 0;
+    animation: fadeSlideDown 0.8s 0.2s forwards;
+  }
+  .badge-dot {
+    width: 6px; height: 6px;
+    background: var(--zk-primary);
+    border-radius: 50%;
+    animation: blink 1.5s infinite;
+  }
+  @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
+
+  .hero-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2.5rem, 7vw, 5.5rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    margin-bottom: 24px;
+    opacity: 0;
+    animation: fadeSlideUp 0.9s 0.4s forwards;
+  }
+  .hero-title .line-1 { display: block; color: var(--zk-text); }
+  .hero-title .line-2 {
+    display: block;
+    background: linear-gradient(90deg, var(--zk-primary), var(--zk-secondary), var(--zk-accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% auto;
+    animation: gradientShift 4s linear infinite, fadeSlideUp 0.9s 0.4s forwards;
+  }
+  @keyframes gradientShift {
+    0% { background-position: 0% center; }
+    100% { background-position: 200% center; }
+  }
+
+  .hero-sub {
+    font-size: 1.15rem;
+    color: var(--zk-muted);
+    line-height: 1.7;
+    max-width: 520px;
+    margin-bottom: 40px;
+    opacity: 0;
+    animation: fadeSlideUp 0.9s 0.6s forwards;
+  }
+
+  .hero-cta {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    opacity: 0;
+    animation: fadeSlideUp 0.9s 0.8s forwards;
+  }
+
+  .btn-primary-zk {
+    background: linear-gradient(135deg, var(--zk-primary), var(--zk-secondary));
+    color: var(--zk-dark);
+    font-family: 'Orbitron', monospace;
+    font-weight: 700;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    padding: 14px 36px;
+    text-decoration: none;
+    text-transform: uppercase;
+    border: none;
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-primary-zk::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: white;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .btn-primary-zk:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px rgba(0,245,212,0.4);
+    color: var(--zk-dark);
+  }
+  .btn-primary-zk:hover::before { opacity: 0.1; }
+
+  .btn-ghost-zk {
+    background: transparent;
+    color: var(--zk-text);
+    font-family: 'Orbitron', monospace;
+    font-weight: 400;
+    font-size: 0.8rem;
+    letter-spacing: 2px;
+    padding: 14px 36px;
+    text-decoration: none;
+    text-transform: uppercase;
+    border: 1px solid rgba(255,255,255,0.2);
+    clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+    transition: all 0.3s;
+  }
+  .btn-ghost-zk:hover {
+    border-color: var(--zk-primary);
+    color: var(--zk-primary);
+    transform: translateY(-2px);
+  }
+
+  /* HERO VISUAL */
+  .hero-visual {
+    position: relative;
+    opacity: 0;
+    animation: fadeIn 1.2s 0.6s forwards;
+  }
+  .hero-vault {
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .vault-ring {
+    width: 360px; height: 360px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,245,212,0.2);
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    animation: ringRotate 20s linear infinite;
+  }
+  .vault-ring-2 {
+    width: 280px; height: 280px;
+    border-color: rgba(0,102,255,0.2);
+    animation: ringRotate 15s linear infinite reverse;
+  }
+  .vault-ring-3 {
+    width: 200px; height: 200px;
+    border-color: rgba(123,47,255,0.3);
+    animation: ringRotate 10s linear infinite;
+  }
+  @keyframes ringRotate { 0% { transform: translate(-50%,-50%) rotate(0deg); } 100% { transform: translate(-50%,-50%) rotate(360deg); } }
+
+  .vault-center {
+    width: 120px; height: 120px;
+    background: linear-gradient(135deg, rgba(0,245,212,0.2), rgba(0,102,255,0.2));
+    border: 1px solid var(--zk-primary);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem;
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    box-shadow: 0 0 40px rgba(0,245,212,0.3), inset 0 0 40px rgba(0,245,212,0.1);
+    animation: vaultPulse 3s ease-in-out infinite;
+    z-index: 5;
+  }
+  @keyframes vaultPulse {
+    0%,100% { box-shadow: 0 0 40px rgba(0,245,212,0.3), inset 0 0 40px rgba(0,245,212,0.1); }
+    50% { box-shadow: 0 0 80px rgba(0,245,212,0.6), inset 0 0 60px rgba(0,245,212,0.2); }
+  }
+
+  .orbit-dot {
+    width: 8px; height: 8px;
+    background: var(--zk-primary);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%; left: 50%;
+    margin: -4px;
+    box-shadow: 0 0 10px var(--zk-primary);
+  }
+
+  /* Hex grid decoration */
+  .hex-grid {
+    position: absolute;
+    top: 0; right: -100px;
+    width: 500px; height: 600px;
+    opacity: 0.06;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* STATS BAR */
+  .stats-bar {
+    position: relative; z-index: 2;
+    padding: 40px 0;
+    border-top: 1px solid var(--zk-border);
+    border-bottom: 1px solid var(--zk-border);
+    background: rgba(0,245,212,0.02);
+  }
+  .stat-item {
+    text-align: center;
+    padding: 20px;
+    opacity: 0;
+    animation: fadeSlideUp 0.7s forwards;
+  }
+  .stat-item:nth-child(1) { animation-delay: 0.1s; }
+  .stat-item:nth-child(2) { animation-delay: 0.2s; }
+  .stat-item:nth-child(3) { animation-delay: 0.3s; }
+  .stat-item:nth-child(4) { animation-delay: 0.4s; }
+  .stat-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.4rem;
+    font-weight: 900;
+    color: var(--zk-primary);
+    display: block;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.85rem;
+    color: var(--zk-muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 6px;
+    display: block;
+  }
+  .stat-divider {
+    width: 1px;
+    background: var(--zk-border);
+    align-self: stretch;
+    margin: 10px 0;
+  }
+
+  /* FEATURES */
+  .section {
+    position: relative; z-index: 2;
+    padding: 100px 0;
+  }
+  .section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 4px;
+    color: var(--zk-primary);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .section-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 900;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+  .section-sub {
+    color: var(--zk-muted);
+    font-size: 1.05rem;
+    line-height: 1.7;
+    max-width: 560px;
+  }
+
+  .feature-card {
+    background: var(--zk-card);
+    border: 1px solid var(--zk-border);
+    padding: 32px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s;
+    height: 100%;
+  }
+  .feature-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--zk-primary), transparent);
+    transform: scaleX(0);
+    transition: transform 0.4s;
+  }
+  .feature-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; right: 0;
+    width: 100px; height: 100px;
+    background: radial-gradient(circle, rgba(0,245,212,0.08), transparent);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .feature-card:hover {
+    border-color: rgba(0,245,212,0.4);
+    transform: translateY(-6px);
+    box-shadow: 0 20px 60px rgba(0,245,212,0.1);
+    background: rgba(0,245,212,0.07);
+  }
+  .feature-card:hover::before { transform: scaleX(1); }
+  .feature-card:hover::after { opacity: 1; }
+
+  .feature-icon {
+    width: 56px; height: 56px;
+    border: 1px solid var(--zk-border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+    position: relative;
+    transition: all 0.4s;
+  }
+  .feature-card:hover .feature-icon {
+    border-color: var(--zk-primary);
+    box-shadow: 0 0 20px rgba(0,245,212,0.3);
+    background: rgba(0,245,212,0.1);
+  }
+  .feature-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+  .feature-text {
+    color: var(--zk-muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  /* HOW IT WORKS */
+  .how-section { background: rgba(0,0,0,0.3); }
+
+  .step-item {
+    display: flex; gap: 24px; align-items: flex-start;
+    padding: 32px;
+    border-left: 2px solid var(--zk-border);
+    position: relative;
+    transition: all 0.3s;
+    margin-bottom: 2px;
+  }
+  .step-item:hover {
+    border-left-color: var(--zk-primary);
+    background: rgba(0,245,212,0.03);
+    padding-left: 40px;
+  }
+  .step-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: rgba(0,245,212,0.15);
+    line-height: 1;
+    min-width: 60px;
+    transition: color 0.3s;
+  }
+  .step-item:hover .step-num { color: var(--zk-primary); }
+  .step-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+  }
+  .step-text { color: var(--zk-muted); font-size: 0.95rem; line-height: 1.6; }
+
+  /* TERMINAL DEMO */
+  .terminal-window {
+    background: #010c19;
+    border: 1px solid var(--zk-border);
+    border-radius: 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .terminal-header {
+    background: rgba(0,245,212,0.05);
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px solid var(--zk-border);
+  }
+  .t-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .t-red { background: #ff5f57; }
+  .t-yellow { background: #febc2e; }
+  .t-green { background: #28c840; }
+  .terminal-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--zk-muted);
+    margin-left: 10px;
+  }
+  .terminal-body {
+    padding: 24px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 2;
+  }
+  .t-line { display: block; }
+  .t-prompt { color: var(--zk-primary); }
+  .t-cmd { color: var(--zk-text); }
+  .t-output { color: rgba(0,245,212,0.6); }
+  .t-success { color: #28c840; }
+  .t-key { color: var(--zk-accent); word-break: break-all; }
+  .t-cursor {
+    display: inline-block;
+    width: 8px; height: 14px;
+    background: var(--zk-primary);
+    animation: cursorBlink 1s infinite;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+  @keyframes cursorBlink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+
+  /* SECURITY SECTION */
+  .security-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px;
+    background: var(--zk-border);
+  }
+  .sec-cell {
+    background: var(--zk-dark);
+    padding: 30px;
+    transition: all 0.3s;
+  }
+  .sec-cell:hover {
+    background: rgba(0,245,212,0.05);
+  }
+  .sec-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 2px;
+    padding: 3px 10px;
+    border: 1px solid;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: inline-block;
+  }
+  .sec-badge.verified { border-color: #28c840; color: #28c840; }
+  .sec-badge.active { border-color: var(--zk-primary); color: var(--zk-primary); }
+  .sec-badge.enabled { border-color: var(--zk-secondary); color: var(--zk-secondary); }
+  .sec-badge.enforced { border-color: var(--zk-accent); color: var(--zk-accent); }
+  .sec-title { font-family: 'Orbitron', monospace; font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; }
+  .sec-text { color: var(--zk-muted); font-size: 0.9rem; line-height: 1.5; }
+
+  /* PRICING */
+  .price-card {
+    background: var(--zk-card);
+    border: 1px solid var(--zk-border);
+    padding: 40px 32px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s;
+    height: 100%;
+  }
+  .price-card.featured {
+    border-color: var(--zk-primary);
+    background: rgba(0,245,212,0.06);
+  }
+  .price-card.featured::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--zk-primary), var(--zk-secondary));
+  }
+  .price-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 30px 80px rgba(0,245,212,0.15);
+    border-color: rgba(0,245,212,0.5);
+  }
+  .plan-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 3px;
+    color: var(--zk-primary);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .plan-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem;
+    font-weight: 900;
+    margin-bottom: 8px;
+  }
+  .plan-price {
+    font-family: 'Orbitron', monospace;
+    font-size: 3rem;
+    font-weight: 900;
+    color: var(--zk-primary);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .plan-period { color: var(--zk-muted); font-size: 0.9rem; margin-bottom: 32px; }
+  .plan-features { list-style: none; padding: 0; margin-bottom: 36px; }
+  .plan-features li {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: var(--zk-muted);
+    font-size: 0.95rem;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .plan-features li i { color: var(--zk-primary); font-size: 0.8rem; }
+
+  /* CTA SECTION */
+  .cta-section {
+    position: relative; z-index: 2;
+    padding: 120px 0;
+    text-align: center;
+    overflow: hidden;
+  }
+  .cta-glow {
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(0,245,212,0.08), transparent 70%);
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    pointer-events: none;
+  }
+  .cta-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(2rem, 5vw, 4rem);
+    font-weight: 900;
+    margin-bottom: 20px;
+  }
+  .cta-sub {
+    color: var(--zk-muted);
+    font-size: 1.1rem;
+    max-width: 500px;
+    margin: 0 auto 40px;
+    line-height: 1.7;
+  }
+
+  /* FOOTER */
+  footer {
+    position: relative; z-index: 2;
+    padding: 60px 0 30px;
+    border-top: 1px solid var(--zk-border);
+    background: rgba(0,0,0,0.4);
+  }
+  .footer-logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.2rem;
+    font-weight: 900;
+    color: var(--zk-primary);
+    margin-bottom: 12px;
+  }
+  .footer-tagline { color: var(--zk-muted); font-size: 0.85rem; }
+  .footer-heading {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--zk-muted);
+    margin-bottom: 16px;
+  }
+  .footer-link {
+    display: block;
+    color: rgba(255,255,255,0.5);
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    transition: color 0.3s;
+  }
+  .footer-link:hover { color: var(--zk-primary); }
+  .footer-bottom {
+    border-top: 1px solid var(--zk-border);
+    padding-top: 24px;
+    margin-top: 40px;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-wrap: wrap; gap: 12px;
+  }
+  .footer-copy { color: var(--zk-muted); font-size: 0.82rem; }
+
+  /* SCROLL ANIMATIONS */
+  .scroll-reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* SCAN LINE EFFECT */
+  .scan-effect {
+    position: fixed; inset: 0; z-index: 3; pointer-events: none;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 245, 212, 0.01) 2px,
+      rgba(0, 245, 212, 0.01) 4px
+    );
+  }
+
+  /* TYPEWRITER */
+  .typewriter {
+    overflow: hidden;
+    border-right: 2px solid var(--zk-primary);
+    white-space: nowrap;
+    animation: typing 3s steps(30, end), blinkCaret 0.75s step-end infinite;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--zk-primary);
+  }
+  @keyframes typing { from { width: 0; } to { width: 100%; } }
+  @keyframes blinkCaret { from, to { border-color: transparent; } 50% { border-color: var(--zk-primary); } }
+
+  /* ANIMATIONS */
+  @keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeSlideDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  /* FLOATING PARTICLES */
+  .particles { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+  .particle {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: var(--zk-primary);
+    border-radius: 50%;
+    animation: particleFloat linear infinite;
+    opacity: 0;
+  }
+  @keyframes particleFloat {
+    0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+    10% { opacity: 0.5; }
+    90% { opacity: 0.3; }
+    100% { transform: translateY(-100px) translateX(var(--drift)); opacity: 0; }
+  }
+
+  /* GLITCH */
+  .glitch {
+    position: relative;
+  }
+  .glitch::before, .glitch::after {
+    content: attr(data-text);
+    position: absolute; top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
+  .glitch::before {
+    color: var(--zk-danger);
+    animation: glitch1 3s infinite;
+    clip-path: polygon(0 30%, 100% 30%, 100% 50%, 0 50%);
+  }
+  .glitch::after {
+    color: var(--zk-secondary);
+    animation: glitch2 3s infinite;
+    clip-path: polygon(0 60%, 100% 60%, 100% 80%, 0 80%);
+  }
+  @keyframes glitch1 {
+    0%,94%,100% { transform: none; }
+    95% { transform: translate(-2px, 1px); }
+    97% { transform: translate(2px, -1px); }
+  }
+  @keyframes glitch2 {
+    0%,96%,100% { transform: none; }
+    97% { transform: translate(2px, 2px); }
+    99% { transform: translate(-2px, -2px); }
+  }
+
+  /* PROGRESS BARS */
+  .progress-zk {
+    background: rgba(0,245,212,0.1);
+    height: 4px;
+    border-radius: 0;
+    overflow: visible;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--zk-primary), var(--zk-secondary));
+    position: relative;
+    animation: progressGrow 2s 0.5s forwards;
+    transform-origin: left;
+    transform: scaleX(0);
+    box-shadow: 0 0 10px var(--zk-primary);
+  }
+  @keyframes progressGrow { to { transform: scaleX(1); } }
+
+  /* HEXAGON SHAPE */
+  .hex-shape {
+    clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+    background: linear-gradient(135deg, var(--zk-primary), var(--zk-secondary));
+    width: 60px; height: 68px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+  }
+
+  @media (max-width: 768px) {
+    .security-grid { grid-template-columns: 1fr; }
+    .hero-visual { display: none; }
+    .vault-ring { display: none; }
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--zk-dark); }
+  ::-webkit-scrollbar-thumb { background: var(--zk-primary); border-radius: 0; }
+
+  /* DATA FLOW ANIMATION */
+  .data-flow {
+    position: absolute;
+    top: 0; left: 50%;
+    width: 1px;
+    height: 100%;
+    background: linear-gradient(180deg, transparent, var(--zk-primary), transparent);
+    animation: dataFlow 3s linear infinite;
+    opacity: 0.3;
+  }
+  @keyframes dataFlow {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100%); }
+  }
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- BACKGROUND -->
+<div class="bg-grid"></div>
+<div class="bg-orbs">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+</div>
+<div class="noise-overlay"></div>
+<div class="scan-effect"></div>
+<div class="particles" id="particles"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between">
+      <a href="#" class="nav-logo">
+        <div class="logo-icon">🔐</div>
+        ZK VAULT
+      </a>
+      <div class="d-none d-lg-flex align-items-center gap-4">
+        <a href="#features" class="nav-link-custom">Features</a>
+        <a href="#security" class="nav-link-custom">Security</a>
+        <a href="#how" class="nav-link-custom">How It Works</a>
+        <a href="#pricing" class="nav-link-custom">Pricing</a>
+      </div>
+      <div class="d-flex align-items-center gap-3">
+        <a href="/login" class="nav-link-custom d-none d-md-block">Login</a>
+        <a href="/register" class="btn-nav">Get Started</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col-lg-6">
+        <div class="hero-badge">
+          <span class="badge-dot"></span>
+          ZERO KNOWLEDGE · END-TO-END ENCRYPTED
+        </div>
+        <h1 class="hero-title">
+          <span class="line-1">YOUR FILES.</span>
+          <span class="line-2 glitch" data-text="YOUR KEYS.">YOUR KEYS.</span>
+          <span class="line-1" style="color: var(--zk-muted); font-size: 0.6em;">NOBODY ELSE'S.</span>
+        </h1>
+        <p class="hero-sub">
+          ZK Vault uses zero-knowledge architecture and AES-256 encryption to ensure your files are encrypted before they ever leave your device. Not even we can see your data.
+        </p>
+        <div class="hero-cta">
+          <a href="/register" class="btn-primary-zk">🚀 Start For Free</a>
+          <a href="#how" class="btn-ghost-zk">↓ How It Works</a>
+        </div>
+
+        <div class="mt-4 pt-3" style="border-top: 1px solid var(--zk-border); opacity: 0; animation: fadeIn 1s 1.2s forwards;">
+          <div class="typewriter">AES-256-GCM // PBKDF2 // Zero-Knowledge Proofs // E2E Encrypted</div>
+        </div>
+      </div>
+
+      <div class="col-lg-6 hero-visual">
+        <div class="hero-vault" style="height: 400px;">
+          <!-- Animated rings -->
+          <div class="vault-ring"></div>
+          <div class="vault-ring vault-ring-2"></div>
+          <div class="vault-ring vault-ring-3"></div>
+
+          <!-- Orbit dots -->
+          <div style="position:absolute;top:50%;left:50%;width:360px;height:360px;transform:translate(-50%,-50%);animation:ringRotate 20s linear infinite;">
+            <div class="orbit-dot" style="top:0;left:50%;"></div>
+            <div class="orbit-dot" style="bottom:0;left:50%;background:var(--zk-secondary);box-shadow:0 0 10px var(--zk-secondary);"></div>
+          </div>
+          <div style="position:absolute;top:50%;left:50%;width:280px;height:280px;transform:translate(-50%,-50%);animation:ringRotate 15s linear infinite reverse;">
+            <div class="orbit-dot" style="top:50%;right:0;background:var(--zk-accent);box-shadow:0 0 10px var(--zk-accent);"></div>
+          </div>
+
+          <!-- Center vault -->
+          <div class="vault-center">🔒</div>
+
+          <!-- Floating data cards -->
+          <div style="position:absolute;top:40px;right:20px;background:rgba(0,245,212,0.08);border:1px solid var(--zk-border);padding:12px 18px;font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--zk-primary);animation:cardFloat1 4s ease-in-out infinite;">
+            <div style="color:var(--zk-muted);margin-bottom:4px;">STATUS</div>
+            <span style="color:#28c840;">● ENCRYPTED</span>
+          </div>
+          <div style="position:absolute;bottom:60px;left:10px;background:rgba(0,102,255,0.08);border:1px solid rgba(0,102,255,0.3);padding:12px 18px;font-family:'JetBrains Mono',monospace;font-size:0.7rem;animation:cardFloat2 5s ease-in-out infinite;">
+            <div style="color:var(--zk-muted);margin-bottom:4px;">ENCRYPTION</div>
+            <span style="color:var(--zk-secondary);">AES-256-GCM</span>
+          </div>
+          <div style="position:absolute;top:80px;left:0;background:rgba(123,47,255,0.08);border:1px solid rgba(123,47,255,0.3);padding:12px 18px;font-family:'JetBrains Mono',monospace;font-size:0.7rem;animation:cardFloat3 6s ease-in-out infinite;">
+            <div style="color:var(--zk-muted);margin-bottom:4px;">ZERO KNOWLEDGE</div>
+            <span style="color:var(--zk-accent);">VERIFIED ✓</span>
+          </div>
+        </div>
+
+        <style>
+          @keyframes cardFloat1 { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+          @keyframes cardFloat2 { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-15px); } }
+          @keyframes cardFloat3 { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
+        </style>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="container">
+    <div class="row g-0 align-items-center">
+      <div class="col-6 col-md-3 stat-item">
+        <span class="stat-num">256<span style="font-size:1rem;color:var(--zk-muted)">-bit</span></span>
+        <span class="stat-label">AES Encryption</span>
+      </div>
+      <div class="col-6 col-md-3 stat-item">
+        <span class="stat-num">0<span style="font-size:1rem;color:var(--zk-muted)">%</span></span>
+        <span class="stat-label">Data Visibility to Us</span>
+      </div>
+      <div class="col-6 col-md-3 stat-item">
+        <span class="stat-num">10<span style="font-size:1rem;color:var(--zk-muted)">GB</span></span>
+        <span class="stat-label">Free Storage</span>
+      </div>
+      <div class="col-6 col-md-3 stat-item">
+        <span class="stat-num">100<span style="font-size:1rem;color:var(--zk-muted)">%</span></span>
+        <span class="stat-label">Client-Side Encrypted</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section" id="features">
+  <div class="container">
+    <div class="row mb-5">
+      <div class="col-lg-6 scroll-reveal">
+        <div class="section-label">// CORE_FEATURES</div>
+        <h2 class="section-title">Security Without <span style="color:var(--zk-primary);">Compromise</span></h2>
+        <p class="section-sub">Every feature built with privacy-first architecture. Your encryption keys never touch our servers.</p>
+      </div>
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6 col-lg-4 scroll-reveal">
+        <div class="feature-card">
+          <div class="feature-icon">🔐</div>
+          <div class="feature-title">Zero-Knowledge Architecture</div>
+          <p class="feature-text">Files are encrypted on your device before upload. We mathematically cannot access your data — even under legal compulsion.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 scroll-reveal" style="transition-delay:0.1s">
+        <div class="feature-card">
+          <div class="feature-icon">🛡️</div>
+          <div class="feature-title">AES-256-GCM Encryption</div>
+          <p class="feature-text">Military-grade authenticated encryption with unique key derivation per file using PBKDF2 with 100,000 iterations.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 scroll-reveal" style="transition-delay:0.2s">
+        <div class="feature-card">
+          <div class="feature-icon">🔗</div>
+          <div class="feature-title">Secure Expiring Links</div>
+          <p class="feature-text">Share files with time-limited, password-protected links. Set download limits and auto-destroy after access.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 scroll-reveal" style="transition-delay:0.3s">
+        <div class="feature-card">
+          <div class="feature-icon">📋</div>
+          <div class="feature-title">Full Audit Logs</div>
+          <p class="feature-text">Complete encrypted activity log. Know exactly who accessed what, when, and from where — all client-side verifiable.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 scroll-reveal" style="transition-delay:0.4s">
+        <div class="feature-card">
+          <div class="feature-icon">👥</div>
+          <div class="feature-title">Access Control</div>
+          <p class="feature-text">Granular permissions system. Grant, revoke, and manage access to individual files or entire vaults.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-4 scroll-reveal" style="transition-delay:0.5s">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-title">Instant Encryption</div>
+          <p class="feature-text">Client-side encryption happens in milliseconds using Web Crypto API. No slowdown, no compromise on security.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="section how-section" id="how">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-5 scroll-reveal">
+        <div class="section-label">// PROTOCOL</div>
+        <h2 class="section-title">How <span style="color:var(--zk-primary);">ZK Vault</span> Works</h2>
+        <p class="section-sub mb-5">A cryptographic guarantee that your data remains private, always.</p>
+
+        <div class="step-item scroll-reveal">
+          <div class="step-num">01</div>
+          <div>
+            <div class="step-title">Key Derivation</div>
+            <p class="step-text">Your master password is hashed with PBKDF2-SHA256 to derive an encryption key. This key never leaves your device.</p>
+          </div>
+        </div>
+        <div class="step-item scroll-reveal" style="transition-delay:0.15s">
+          <div class="step-num">02</div>
+          <div>
+            <div class="step-title">Client-Side Encryption</div>
+            <p class="step-text">Files are encrypted in your browser using AES-256-GCM with a unique IV before any data is transmitted.</p>
+          </div>
+        </div>
+        <div class="step-item scroll-reveal" style="transition-delay:0.3s">
+          <div class="step-num">03</div>
+          <div>
+            <div class="step-title">Secure Upload</div>
+            <p class="step-text">Only ciphertext reaches our servers. We store encrypted blobs with zero ability to decrypt or read your files.</p>
+          </div>
+        </div>
+        <div class="step-item scroll-reveal" style="transition-delay:0.45s">
+          <div class="step-num">04</div>
+          <div>
+            <div class="step-title">On-Demand Decryption</div>
+            <p class="step-text">When you download, decryption happens locally in your browser. Your key, your device, your files.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-7 scroll-reveal" style="transition-delay:0.2s">
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <div class="t-dot t-red"></div>
+            <div class="t-dot t-yellow"></div>
+            <div class="t-dot t-green"></div>
+            <span class="terminal-title">zkvault_encrypt.py — zero_knowledge_protocol</span>
+          </div>
+          <div class="terminal-body">
+            <span class="t-line"><span class="t-prompt">$</span> <span class="t-cmd">zkvault encrypt --file secret_doc.pdf</span></span>
+            <span class="t-line t-output">→ Deriving key from master password (PBKDF2-SHA256, 100k iters)...</span>
+            <span class="t-line t-output">→ Generating unique IV: <span class="t-key">8f3a2d1e9c4b7a06</span></span>
+            <span class="t-line t-output">→ Encrypting with AES-256-GCM...</span>
+            <span class="t-line t-success">✓ Encrypted: secret_doc.pdf [2.4MB → 2.4MB ciphertext]</span>
+            <span class="t-line">&nbsp;</span>
+            <span class="t-line"><span class="t-prompt">$</span> <span class="t-cmd">zkvault upload --encrypted secret_doc.pdf.enc</span></span>
+            <span class="t-line t-output">→ Uploading ciphertext to ZK Vault servers...</span>
+            <span class="t-line t-output">→ Key: <span style="color:rgba(0,245,212,0.4)">[NEVER TRANSMITTED]</span></span>
+            <span class="t-line t-success">✓ Upload complete. File ID: <span class="t-key">zkv_7f2a9c3e1b8d4</span></span>
+            <span class="t-line">&nbsp;</span>
+            <span class="t-line"><span class="t-prompt">$</span> <span class="t-cmd">zkvault share --file zkv_7f2a9c3e1b8d4 --expires 24h</span></span>
+            <span class="t-line t-success">✓ Secure link generated (expires in 24 hours)</span>
+            <span class="t-line t-output">→ https://zkvault.io/s/<span class="t-key">xK9mP2vR</span></span>
+            <span class="t-line">&nbsp;</span>
+            <span class="t-line"><span class="t-prompt">$</span> <span class="t-cursor"></span></span>
+          </div>
+        </div>
+
+        <!-- Encryption stats -->
+        <div class="mt-3 p-3" style="background:rgba(0,245,212,0.04);border:1px solid var(--zk-border);">
+          <div class="row g-3 text-center">
+            <div class="col-4">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--zk-muted);margin-bottom:4px;">KEY SIZE</div>
+              <div style="font-family:'Orbitron',monospace;font-size:1rem;color:var(--zk-primary);">256-bit</div>
+            </div>
+            <div class="col-4">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--zk-muted);margin-bottom:4px;">ALGORITHM</div>
+              <div style="font-family:'Orbitron',monospace;font-size:1rem;color:var(--zk-primary);">AES-GCM</div>
+            </div>
+            <div class="col-4">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--zk-muted);margin-bottom:4px;">KDF ITERS</div>
+              <div style="font-family:'Orbitron',monospace;font-size:1rem;color:var(--zk-primary);">100,000</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECURITY -->
+<section class="section" id="security">
+  <div class="container">
+    <div class="text-center mb-5 scroll-reveal">
+      <div class="section-label">// SECURITY_MATRIX</div>
+      <h2 class="section-title">Built For <span style="color:var(--zk-primary);">Paranoids</span></h2>
+      <p class="section-sub mx-auto text-center">Every security decision made with the assumption that our servers could be compromised.</p>
+    </div>
+
+    <div class="security-grid scroll-reveal">
+      <div class="sec-cell">
+        <span class="sec-badge verified">VERIFIED</span>
+        <div class="sec-title">End-to-End Encryption</div>
+        <p class="sec-text">Data is encrypted on your device before transmission. Decryption only happens locally. Our servers never see plaintext.</p>
+        <div class="mt-3">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--zk-muted);margin-bottom:6px;">CIPHER STRENGTH</div>
+          <div class="progress-zk">
+            <div class="progress-fill" style="width:100%"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sec-cell">
+        <span class="sec-badge active">ACTIVE</span>
+        <div class="sec-title">Zero-Knowledge Proofs</div>
+        <p class="sec-text">Mathematically proven that we cannot access your data. Not a policy — a cryptographic impossibility.</p>
+        <div class="mt-3">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--zk-muted);margin-bottom:6px;">PROOF STRENGTH</div>
+          <div class="progress-zk">
+            <div class="progress-fill" style="width:100%;animation-delay:0.2s"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sec-cell">
+        <span class="sec-badge enabled">ENABLED</span>
+        <div class="sec-title">Secure Key Derivation</div>
+        <p class="sec-text">PBKDF2-SHA256 with 100,000 iterations makes brute-force attacks computationally infeasible even with modern hardware.</p>
+        <div class="mt-3">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--zk-muted);margin-bottom:6px;">BRUTE-FORCE RESISTANCE</div>
+          <div class="progress-zk">
+            <div class="progress-fill" style="width:97%;animation-delay:0.4s"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sec-cell">
+        <span class="sec-badge enforced">ENFORCED</span>
+        <div class="sec-title">Secure Link Sharing</div>
+        <p class="sec-text">Shared links use one-time tokens with optional password protection, expiry dates, and download limits.</p>
+        <div class="mt-3">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--zk-muted);margin-bottom:6px;">ACCESS CONTROL</div>
+          <div class="progress-zk">
+            <div class="progress-fill" style="width:95%;animation-delay:0.6s"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section" id="pricing" style="background:rgba(0,0,0,0.2);">
+  <div class="container">
+    <div class="text-center mb-5 scroll-reveal">
+      <div class="section-label">// PLANS</div>
+      <h2 class="section-title">Simple <span style="color:var(--zk-primary);">Pricing</span></h2>
+      <p class="section-sub mx-auto">Privacy shouldn't be a luxury. Start free, upgrade when you need more.</p>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+      <div class="col-md-4 scroll-reveal">
+        <div class="price-card">
+          <div class="plan-badge">// FREE_TIER</div>
+          <div class="plan-name">Vault Free</div>
+          <div class="plan-price">₹0</div>
+          <div class="plan-period">Forever free, no credit card</div>
+          <ul class="plan-features">
+            <li><i class="bi bi-check-lg"></i> 10 GB Encrypted Storage</li>
+            <li><i class="bi bi-check-lg"></i> AES-256 Encryption</li>
+            <li><i class="bi bi-check-lg"></i> Secure Share Links</li>
+            <li><i class="bi bi-check-lg"></i> Activity Logs</li>
+            <li><i class="bi bi-check-lg"></i> Up to 5 Shared Links</li>
+          </ul>
+          <a href="/register" class="btn-ghost-zk d-block text-center">Start Free →</a>
+        </div>
+      </div>
+      <div class="col-md-4 scroll-reveal" style="transition-delay:0.15s">
+        <div class="price-card featured">
+          <div style="position:absolute;top:16px;right:16px;background:var(--zk-primary);color:var(--zk-dark);font-family:'JetBrains Mono',monospace;font-size:0.6rem;padding:3px 10px;letter-spacing:2px;text-transform:uppercase;">POPULAR</div>
+          <div class="plan-badge">// PRO_TIER</div>
+          <div class="plan-name">Vault Pro</div>
+          <div class="plan-price">₹299</div>
+          <div class="plan-period">per month, billed annually</div>
+          <ul class="plan-features">
+            <li><i class="bi bi-check-lg"></i> 100 GB Encrypted Storage</li>
+            <li><i class="bi bi-check-lg"></i> Everything in Free</li>
+            <li><i class="bi bi-check-lg"></i> Unlimited Share Links</li>
+            <li><i class="bi bi-check-lg"></i> Password-Protected Links</li>
+            <li><i class="bi bi-check-lg"></i> Access Control & Roles</li>
+            <li><i class="bi bi-check-lg"></i> Priority Support</li>
+          </ul>
+          <a href="/register" class="btn-primary-zk d-block text-center">Upgrade Now →</a>
+        </div>
+      </div>
+      <div class="col-md-4 scroll-reveal" style="transition-delay:0.3s">
+        <div class="price-card">
+          <div class="plan-badge">// ENTERPRISE</div>
+          <div class="plan-name">Vault Enterprise</div>
+          <div class="plan-price" style="font-size:2rem;">Custom</div>
+          <div class="plan-period">Contact for institutional pricing</div>
+          <ul class="plan-features">
+            <li><i class="bi bi-check-lg"></i> Unlimited Storage</li>
+            <li><i class="bi bi-check-lg"></i> Everything in Pro</li>
+            <li><i class="bi bi-check-lg"></i> Custom KDF Parameters</li>
+            <li><i class="bi bi-check-lg"></i> On-Premise Option</li>
+            <li><i class="bi bi-check-lg"></i> Dedicated Support</li>
+            <li><i class="bi bi-check-lg"></i> SLA Guarantee</li>
+          </ul>
+          <a href="mailto:enterprise@zkvault.io" class="btn-ghost-zk d-block text-center">Contact Us →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="cta-glow"></div>
+  <div class="container position-relative">
+    <div class="scroll-reveal">
+      <div class="section-label mb-3">// TAKE_ACTION</div>
+      <h2 class="cta-title">
+        Own Your <span style="color:var(--zk-primary);">Privacy.</span><br>
+        Own Your <span style="background:linear-gradient(90deg,var(--zk-primary),var(--zk-secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Data.</span>
+      </h2>
+      <p class="cta-sub">Join thousands of users who trust ZK Vault with their most sensitive files. Setup takes 60 seconds.</p>
+      <div class="d-flex gap-3 justify-content-center flex-wrap">
+        <a href="/register" class="btn-primary-zk" style="font-size:0.9rem;padding:16px 48px;">🔐 Create Your Vault — Free</a>
+        <a href="/login" class="btn-ghost-zk" style="font-size:0.9rem;padding:16px 48px;">Login to Vault</a>
+      </div>
+
+      <div class="mt-5 d-flex gap-4 justify-content-center flex-wrap" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--zk-muted);">
+        <span>✓ No credit card required</span>
+        <span>✓ 10GB free storage</span>
+        <span>✓ Cancel anytime</span>
+        <span>✓ Open source encryption</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="footer-logo">🔐 ZK VAULT</div>
+        <div class="footer-tagline" style="max-width:280px;line-height:1.6;">Zero-knowledge encrypted file storage. Your files, your keys, zero compromise.</div>
+        <div class="mt-3 d-flex gap-3">
+          <a href="#" style="color:var(--zk-muted);font-size:1.2rem;transition:color 0.3s;" onmouseover="this.style.color='var(--zk-primary)'" onmouseout="this.style.color='var(--zk-muted)'"><i class="bi bi-github"></i></a>
+          <a href="#" style="color:var(--zk-muted);font-size:1.2rem;transition:color 0.3s;" onmouseover="this.style.color='var(--zk-primary)'" onmouseout="this.style.color='var(--zk-muted)'"><i class="bi bi-twitter-x"></i></a>
+          <a href="#" style="color:var(--zk-muted);font-size:1.2rem;transition:color 0.3s;" onmouseover="this.style.color='var(--zk-primary)'" onmouseout="this.style.color='var(--zk-muted)'"><i class="bi bi-linkedin"></i></a>
+        </div>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div class="footer-heading">Product</div>
+        <a href="#features" class="footer-link">Features</a>
+        <a href="#security" class="footer-link">Security</a>
+        <a href="#pricing" class="footer-link">Pricing</a>
+        <a href="#" class="footer-link">Changelog</a>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div class="footer-heading">Security</div>
+        <a href="#" class="footer-link">Encryption Docs</a>
+        <a href="#" class="footer-link">ZK Protocol</a>
+        <a href="#" class="footer-link">Audit Reports</a>
+        <a href="#" class="footer-link">Bug Bounty</a>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div class="footer-heading">Company</div>
+        <a href="#" class="footer-link">About</a>
+        <a href="#" class="footer-link">Blog</a>
+        <a href="#" class="footer-link">Careers</a>
+        <a href="#" class="footer-link">Contact</a>
+      </div>
+      <div class="col-6 col-lg-2">
+        <div class="footer-heading">Legal</div>
+        <a href="#" class="footer-link">Privacy Policy</a>
+        <a href="#" class="footer-link">Terms of Service</a>
+        <a href="#" class="footer-link">Cookie Policy</a>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 ZK Vault. Built with zero knowledge and maximum privacy.</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--zk-primary);">
+        v2.4 // AES-256 // PBKDF2 // ZERO KNOWLEDGE
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Custom cursor
+  const cursor = document.getElementById('cursor');
+  const cursorRing = document.getElementById('cursorRing');
+  let mouseX = 0, mouseY = 0, ringX = 0, ringY = 0;
+
+  document.addEventListener('mousemove', e => {
+    mouseX = e.clientX; mouseY = e.clientY;
+    cursor.style.left = mouseX - 6 + 'px';
+    cursor.style.top = mouseY - 6 + 'px';
+  });
+
+  function animateRing() {
+    ringX += (mouseX - ringX - 20) * 0.12;
+    ringY += (mouseY - ringY - 20) * 0.12;
+    cursorRing.style.left = ringX + 'px';
+    cursorRing.style.top = ringY + 'px';
+    requestAnimationFrame(animateRing);
+  }
+  animateRing();
+
+  document.querySelectorAll('a, button').forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.style.transform = 'scale(2)');
+    el.addEventListener('mouseleave', () => cursor.style.transform = 'scale(1)');
+  });
+
+  // Nav scroll
+  const navbar = document.getElementById('navbar');
+  window.addEventListener('scroll', () => {
+    navbar.classList.toggle('scrolled', window.scrollY > 50);
+  });
+
+  // Scroll reveal
+  const reveals = document.querySelectorAll('.scroll-reveal');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('revealed');
+      }
+    });
+  }, { threshold: 0.1 });
+  reveals.forEach(el => io.observe(el));
+
+  // Particles
+  const particlesContainer = document.getElementById('particles');
+  function createParticle() {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.setProperty('--drift', (Math.random() - 0.5) * 100 + 'px');
+    const dur = 8 + Math.random() * 12;
+    p.style.animationDuration = dur + 's';
+    p.style.animationDelay = -Math.random() * dur + 's';
+    const colors = ['var(--zk-primary)', 'var(--zk-secondary)', 'var(--zk-accent)'];
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    particlesContainer.appendChild(p);
+  }
+  for (let i = 0; i < 30; i++) createParticle();
+
+  // Counter animation
+  function animateCounter(el, target, suffix = '') {
+    let current = 0;
+    const increment = target / 60;
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) { current = target; clearInterval(timer); }
+      el.textContent = Math.floor(current) + suffix;
+    }, 16);
+  }
+
+  // Smooth scroll
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+  });
+</script>
+</body>
+</html>

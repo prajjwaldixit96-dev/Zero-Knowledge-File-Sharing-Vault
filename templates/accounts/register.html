@@ -1,0 +1,355 @@
+{% extends 'base.html' %}
+{% block title %}Register{% endblock %}
+
+{% block extra_css %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap');
+
+:root{
+  --zk-primary:#00f5d4;--zk-secondary:#0066ff;--zk-accent:#7b2fff;
+  --zk-danger:#ff2d55;--zk-dark:#020b18;--zk-dark-2:#040f1e;
+  --zk-card:rgba(0,245,212,.04);--zk-border:rgba(0,245,212,.14);
+  --zk-border-2:rgba(0,245,212,.28);--zk-text:#e0f7f4;--zk-muted:rgba(224,247,244,.5);
+  --zk-success:#10b981;--zk-warning:#f59e0b;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--zk-dark);color:var(--zk-text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* BG */
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(0,245,212,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,212,.025) 1px,transparent 1px);background-size:50px 50px;animation:gridBreath 10s ease-in-out infinite}
+@keyframes gridBreath{0%,100%{opacity:.5}50%{opacity:1}}
+.bg-orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
+.bg-orb-1{width:600px;height:600px;background:var(--zk-accent);opacity:.06;top:-250px;right:-200px;animation:orbDrift 24s ease-in-out infinite}
+.bg-orb-2{width:450px;height:450px;background:var(--zk-primary);opacity:.06;bottom:-180px;left:-120px;animation:orbDrift 20s ease-in-out infinite reverse}
+.bg-orb-3{width:300px;height:300px;background:var(--zk-secondary);opacity:.05;top:40%;left:5%;animation:orbDrift 16s ease-in-out infinite 5s}
+@keyframes orbDrift{0%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-25px) scale(1.08)}66%{transform:translate(-20px,30px) scale(.95)}100%{transform:translate(0,0) scale(1)}}
+.scanlines{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,245,212,.008) 2px,rgba(0,245,212,.008) 4px)}
+
+/* REGISTER UNIQUE: rotating hex ring bg */
+.hex-ring{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:0;pointer-events:none;opacity:.04}
+.hex-ring svg{animation:hexSpin 40s linear infinite}
+@keyframes hexSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+/* PARTICLES */
+.particle{position:fixed;width:2px;height:2px;border-radius:50%;pointer-events:none;z-index:1;animation:particleUp linear infinite;opacity:0}
+@keyframes particleUp{0%{transform:translateY(100vh) translateX(0);opacity:0}10%{opacity:.6}90%{opacity:.3}100%{transform:translateY(-100px) translateX(var(--drift));opacity:0}}
+
+/* AUTH WRAPPER */
+.auth-page{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 16px}
+
+/* CONTAINER */
+.auth-container{width:100%;max-width:580px;animation:authIn .8s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes authIn{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+
+/* BRAND */
+.auth-brand{text-align:center;margin-bottom:28px;animation:fadeDown .6s .1s both}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+.brand-logo{display:inline-flex;align-items:center;gap:12px;margin-bottom:8px}
+.logo-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--zk-primary),var(--zk-secondary));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#020b18;box-shadow:0 0 20px rgba(0,245,212,.35);animation:logoPulse 3s ease-in-out infinite}
+@keyframes logoPulse{0%,100%{box-shadow:0 0 20px rgba(0,245,212,.35)}50%{box-shadow:0 0 40px rgba(0,245,212,.7),0 0 60px rgba(0,245,212,.2)}}
+.brand-name{font-family:'Orbitron',monospace;font-size:1.5rem;font-weight:900;color:var(--zk-primary);letter-spacing:3px}
+.auth-tagline{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:3px;color:var(--zk-muted);text-transform:uppercase}
+
+/* CARD */
+.auth-card{background:rgba(4,15,30,.88);border:1px solid var(--zk-border);backdrop-filter:blur(24px);padding:36px;position:relative;overflow:hidden;animation:cardIn .7s .2s both}
+@keyframes cardIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.auth-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--zk-accent),var(--zk-primary),transparent);animation:topBeam 4s linear infinite}
+@keyframes topBeam{0%{opacity:.4}50%{opacity:1}100%{opacity:.4}}
+.auth-card::after{content:'';position:absolute;bottom:-60px;right:-60px;width:200px;height:200px;background:radial-gradient(circle,rgba(123,47,255,.05),transparent);pointer-events:none}
+
+/* CORNER */
+.corner-tl,.corner-br{position:absolute;width:18px;height:18px;pointer-events:none;transition:all .4s}
+.corner-tl{top:12px;left:12px;border-top:2px solid var(--zk-primary);border-left:2px solid var(--zk-primary)}
+.corner-br{bottom:12px;right:12px;border-bottom:2px solid var(--zk-primary);border-right:2px solid var(--zk-primary)}
+.auth-card:hover .corner-tl,.auth-card:hover .corner-br{width:24px;height:24px}
+
+.auth-title{font-family:'Orbitron',monospace;font-size:1.25rem;font-weight:900;letter-spacing:1px;margin-bottom:5px}
+.auth-subtitle{color:var(--zk-muted);font-size:.95rem;margin-bottom:22px}
+
+/* FORM FIELDS with stagger */
+.form-group{margin-bottom:16px}
+.form-group.f1{animation:fieldIn .5s .3s both}
+.form-group.f2{animation:fieldIn .5s .35s both}
+.form-group.f3{animation:fieldIn .5s .4s both}
+.form-group.f4{animation:fieldIn .5s .45s both}
+.form-group.f5{animation:fieldIn .5s .5s both}
+@keyframes fieldIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:translateX(0)}}
+.form-label{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--zk-muted);margin-bottom:7px;display:block}
+.input-wrap{position:relative;display:flex;align-items:center}
+.input-icon{position:absolute;left:14px;color:var(--zk-muted);font-size:.85rem;pointer-events:none;z-index:1;transition:color .3s}
+.form-input{width:100%;background:rgba(0,245,212,.04);border:1px solid var(--zk-border);color:var(--zk-text);font-family:'Rajdhani',sans-serif;font-size:.95rem;padding:11px 14px 11px 40px;outline:none;border-radius:0;transition:all .3s;-webkit-appearance:none}
+.form-input::placeholder{color:rgba(224,247,244,.3)}
+.form-input:focus{border-color:var(--zk-primary);background:rgba(0,245,212,.08);box-shadow:0 0 0 3px rgba(0,245,212,.1)}
+.input-wrap:focus-within .input-icon{color:var(--zk-primary)}
+.input-toggle{position:absolute;right:12px;background:none;border:none;color:var(--zk-muted);cursor:pointer;font-size:.85rem;padding:4px;transition:color .3s;z-index:2}
+.input-toggle:hover{color:var(--zk-primary)}
+
+/* STRENGTH */
+.strength-bar{height:3px;background:rgba(255,255,255,.06);margin-top:8px;overflow:hidden}
+.strength-fill{height:100%;width:0%;background:transparent;transition:width .5s ease,background .5s ease;box-shadow:0 0 8px currentColor}
+.form-hint{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--zk-muted);margin-top:5px;transition:color .3s}
+
+/* LIGHT THEME OVERRIDES */
+[data-theme="light"] body{background:#f0f4f8;color:#0a1628}
+[data-theme="light"] .bg-grid{background-image:linear-gradient(rgba(0,102,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,102,255,.04) 1px,transparent 1px)}
+[data-theme="light"] .bg-orb-1{background:#7b2fff;opacity:.06}
+[data-theme="light"] .bg-orb-2{background:#00f5d4;opacity:.07}
+[data-theme="light"] .bg-orb-3{background:#0066ff;opacity:.05}
+[data-theme="light"] .hex-ring svg polygon{stroke:rgba(0,102,255,.15)}
+[data-theme="light"] .auth-card{background:rgba(255,255,255,.96);border-color:rgba(0,102,255,.15);box-shadow:0 8px 40px rgba(0,0,0,.1)}
+[data-theme="light"] .auth-title{color:#0a1628}
+[data-theme="light"] .auth-subtitle{color:rgba(10,22,40,.5)}
+[data-theme="light"] .auth-tagline{color:rgba(10,22,40,.4)}
+[data-theme="light"] .brand-name{color:#007a68}
+[data-theme="light"] .form-label{color:rgba(10,22,40,.45)}
+[data-theme="light"] .form-input{background:#f0f4f8;border-color:rgba(0,102,255,.18);color:#0a1628}
+[data-theme="light"] .form-input:focus{background:#e6f7f5;border-color:#007a68;box-shadow:0 0 0 3px rgba(0,138,120,.12)}
+[data-theme="light"] .form-input::placeholder{color:rgba(10,22,40,.3)}
+[data-theme="light"] .input-icon{color:rgba(10,22,40,.35)}
+[data-theme="light"] .input-wrap:focus-within .input-icon{color:#007a68}
+[data-theme="light"] .input-toggle{color:rgba(10,22,40,.35)}
+[data-theme="light"] .input-toggle:hover{color:#007a68}
+[data-theme="light"] .strength-bar{background:rgba(0,0,0,.08)}
+[data-theme="light"] .form-hint{color:rgba(10,22,40,.4)}
+[data-theme="light"] .alert-custom.info{background:rgba(0,102,255,.06);color:rgba(10,22,40,.7)}
+[data-theme="light"] .check-row{color:rgba(10,22,40,.5)}
+[data-theme="light"] .link{color:#007a68}
+[data-theme="light"] .corner-tl,[data-theme="light"] .corner-br{border-color:#007a68}
+[data-theme="light"] .step-dot{background:#fff;border-color:rgba(0,102,255,.2);color:rgba(10,22,40,.35)}
+[data-theme="light"] .step-dot.active{border-color:#007a68;color:#007a68;box-shadow:0 0 12px rgba(0,138,120,.2)}
+[data-theme="light"] .step-line{background:rgba(0,102,255,.12)}
+[data-theme="light"] .step-line.done{background:#007a68}
+[data-theme="light"] .particle{opacity:.2}
+
+
+/* ALERT */
+.alert-custom{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;font-size:.88rem;border-left:3px solid;margin-bottom:16px}
+.alert-custom.info{background:rgba(0,102,255,.08);border-color:var(--zk-secondary);color:rgba(224,247,244,.8)}
+.alert-custom i{flex-shrink:0;margin-top:2px;color:var(--zk-secondary)}
+
+/* CHECK */
+.check-row{font-size:.88rem;color:var(--zk-muted);cursor:pointer;user-select:none}
+.check-row input[type=checkbox]{width:15px;height:15px;accent-color:var(--zk-primary);cursor:pointer}
+.link{color:var(--zk-primary);text-decoration:none;font-weight:600;transition:all .3s}
+.link:hover{color:#fff;text-shadow:0 0 10px var(--zk-primary)}
+
+/* BUTTONS */
+.btn-zk-primary{background:linear-gradient(135deg,var(--zk-primary),var(--zk-secondary));color:var(--zk-dark)!important;font-family:'Orbitron',monospace;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:13px 28px;border:none;border-radius:0;cursor:pointer;position:relative;overflow:hidden;transition:all .3s;clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;animation:btnReveal .5s .6s both}
+@keyframes btnReveal{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.btn-zk-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,245,212,.35);filter:brightness(1.1)}
+.btn-zk-primary::before{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:skewX(-20deg);transition:left .5s}
+.btn-zk-primary:hover::before{left:150%}
+
+/* Progress steps visual */
+.reg-steps{display:flex;gap:0;margin-bottom:24px;position:relative}
+.reg-steps::before{content:'';position:absolute;top:50%;left:0;right:0;height:1px;background:var(--zk-border);z-index:0;transform:translateY(-50%)}
+.step-dot{width:28px;height:28px;border:1px solid var(--zk-border);background:var(--zk-dark);display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--zk-muted);position:relative;z-index:1;transition:all .4s;flex-shrink:0}
+.step-dot.active{border-color:var(--zk-primary);color:var(--zk-primary);box-shadow:0 0 12px rgba(0,245,212,.3)}
+.step-line{flex:1;height:1px;background:var(--zk-border);align-self:center;z-index:0;transition:background .4s}
+.step-line.done{background:var(--zk-primary)}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+.toast-item{display:flex;align-items:center;gap:10px;background:rgba(4,15,30,.95);border:1px solid var(--zk-border);backdrop-filter:blur(16px);padding:12px 18px;font-family:'Rajdhani',sans-serif;font-size:.9rem;min-width:260px;max-width:380px;transform:translateX(120%);transition:transform .4s cubic-bezier(.16,1,.3,1);border-left:3px solid}
+.toast-item.info{border-left-color:var(--zk-secondary)}.toast-item.success{border-left-color:var(--zk-success)}.toast-item.danger{border-left-color:var(--zk-danger)}
+.toast-item.show{transform:translateX(0)}
+</style>
+{% endblock %}
+
+{% block body %}
+{% for message in messages %}
+<div class="django-message" data-message="{{ message }}" data-type="{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}" style="display:none"></div>
+{% endfor %}
+
+<!-- BG -->
+<div class="bg-grid"></div>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div class="bg-orb bg-orb-3"></div>
+<div class="scanlines"></div>
+
+<!-- UNIQUE REGISTER BG: large hex ring -->
+<div class="hex-ring">
+  <svg width="900" height="900" viewBox="0 0 900 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="450,20 860,237 860,663 450,880 40,663 40,237" stroke="#00f5d4" stroke-width="1" fill="none"/>
+    <polygon points="450,70 820,262 820,638 450,830 80,638 80,262" stroke="#0066ff" stroke-width=".5" fill="none"/>
+    <polygon points="450,120 780,287 780,613 450,780 120,613 120,287" stroke="#7b2fff" stroke-width=".3" fill="none"/>
+  </svg>
+</div>
+
+<div id="particles"></div>
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="auth-page">
+  <div class="auth-container">
+
+    <!-- BRAND -->
+    <div class="auth-brand">
+      <div class="brand-logo">
+        <span class="logo-icon"><i class="fa-solid fa-shield-halved"></i></span>
+        <span class="brand-name">ZK VAULT</span>
+      </div>
+      <p class="auth-tagline">Zero Knowledge · End-to-End Encrypted</p>
+    </div>
+
+    <!-- CARD -->
+    <div class="auth-card">
+      <div class="corner-tl"></div>
+      <div class="corner-br"></div>
+
+      <!-- Step indicator -->
+      <div class="reg-steps mb-4">
+        <div class="step-dot active">01</div>
+        <div class="step-line done"></div>
+        <div class="step-dot active">02</div>
+        <div class="step-line"></div>
+        <div class="step-dot" style="color:rgba(0,245,212,.2)">03</div>
+      </div>
+
+      <h2 class="auth-title">Create your vault</h2>
+      <p class="auth-subtitle">Your files, your keys — always.</p>
+
+      <form method="post" action="{% url 'register' %}">
+        {% csrf_token %}
+
+        <div class="row g-3 mb-0">
+          <div class="col-6">
+            <div class="form-group f1 mb-0">
+              <label class="form-label">First Name</label>
+              <div class="input-wrap">
+                <i class="fa-solid fa-user input-icon"></i>
+                <input type="text" name="first_name" class="form-input" placeholder="Alex" required>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group f1 mb-0">
+              <label class="form-label">Last Name</label>
+              <div class="input-wrap">
+                <i class="fa-solid fa-user input-icon"></i>
+                <input type="text" name="last_name" class="form-input" placeholder="Smith" required>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group f2 mt-3">
+          <label class="form-label">Email address</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-envelope input-icon"></i>
+            <input type="email" name="email" class="form-input" placeholder="you@example.com" required>
+          </div>
+        </div>
+
+        <div class="form-group f3">
+          <label class="form-label">Master Password</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-key input-icon"></i>
+            <input type="password" name="password" class="form-input" id="regPass"
+                   placeholder="Create a strong password" oninput="updateStrength(this.value)" required>
+            <button type="button" class="input-toggle" onclick="togglePass('regPass','regEye')">
+              <i class="fa-solid fa-eye" id="regEye"></i>
+            </button>
+          </div>
+          <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+          <p class="form-hint" id="strengthLabel">Enter a password to see strength</p>
+        </div>
+
+        <div class="form-group f4">
+          <label class="form-label">Confirm Password</label>
+          <div class="input-wrap">
+            <i class="fa-solid fa-key input-icon"></i>
+            <input type="password" name="confirm_password" class="form-input"
+                   placeholder="Re-enter your password" required>
+          </div>
+        </div>
+
+        <div class="alert-custom info mb-3">
+          <i class="fa-solid fa-circle-info"></i>
+          <div><strong>Zero Knowledge:</strong> Your master password is never stored or transmitted. We cannot recover it.</div>
+        </div>
+
+        <label class="check-row d-flex align-items-center gap-2 mb-4">
+          <input type="checkbox" name="agree_terms" required>
+          I agree to the <a href="#" class="link ms-1">Terms of Service</a> &amp; <a href="#" class="link ms-1">Privacy Policy</a>
+        </label>
+
+        <button type="submit" class="btn-zk-primary">
+          <i class="fa-solid fa-vault"></i> Create Encrypted Vault
+        </button>
+
+        <p class="text-center mt-3" style="font-size:12px;color:var(--zk-muted)">
+          Already have an account? <a href="{% url 'login' %}" class="link">Sign in</a>
+        </p>
+      </form>
+    </div>
+
+    <div class="d-flex justify-content-center align-items-center gap-3 mt-3" style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:rgba(0,245,212,.3)">
+      <span>● AES-256-GCM</span>
+      <span>● PBKDF2-SHA256</span>
+      <span>● ZERO KNOWLEDGE</span>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const c=document.getElementById('particles');
+  for(let i=0;i<22;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    p.style.cssText=`left:${Math.random()*100}vw;--drift:${(Math.random()-.5)*80}px;animation-duration:${9+Math.random()*11}s;animation-delay:${-Math.random()*15}s;background:${['#00f5d4','#0066ff','#7b2fff'][Math.floor(Math.random()*3)]}`;
+    c.appendChild(p);
+  }
+})();
+
+let _tid=0;
+function showToast(msg,type='info'){
+  const icons={info:'fa-circle-info',success:'fa-check-circle',warning:'fa-triangle-exclamation',danger:'fa-circle-xmark'};
+  const el=document.createElement('div');
+  el.className=`toast-item ${type}`;
+  el.innerHTML=`<i class="fa-solid ${icons[type]||icons.info}" style="font-size:15px"></i><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),400)},3500);
+}
+
+function togglePass(id,iconId){
+  const inp=document.getElementById(id);
+  const ico=document.getElementById(iconId);
+  if(!inp)return;
+  inp.type=inp.type==='password'?'text':'password';
+  if(ico)ico.className=inp.type==='password'?'fa-solid fa-eye':'fa-solid fa-eye-slash';
+}
+
+function updateStrength(val){
+  const fill=document.getElementById('strengthFill');
+  const label=document.getElementById('strengthLabel');
+  if(!fill)return;
+  let score=0;
+  if(val.length>=8)score++;
+  if(val.length>=12)score++;
+  if(/[A-Z]/.test(val)&&/[a-z]/.test(val))score++;
+  if(/[0-9]/.test(val))score++;
+  if(/[^A-Za-z0-9]/.test(val))score++;
+  const levels=[
+    {w:'0%',c:'transparent',t:'Enter a password to see strength'},
+    {w:'20%',c:'#ef4444',t:'Very Weak'},
+    {w:'40%',c:'#f97316',t:'Weak'},
+    {w:'60%',c:'#f59e0b',t:'Fair'},
+    {w:'80%',c:'#10b981',t:'Strong'},
+    {w:'100%',c:'#06d6a0',t:'✓ Very Strong — vault-grade password'},
+  ];
+  const l=levels[Math.min(score,5)];
+  fill.style.width=val?l.w:'0%';
+  fill.style.background=l.c;
+  if(label){label.textContent=val?l.t:levels[0].t;label.style.color=l.c}
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+  document.querySelectorAll('.django-message').forEach(el=>{
+    showToast(el.dataset.message,el.dataset.type||'info');
+  });
+});
+</script>
+{% endblock %}

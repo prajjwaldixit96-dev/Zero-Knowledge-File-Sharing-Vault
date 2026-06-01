@@ -1,0 +1,205 @@
+{% extends 'base.html' %}
+{% block title %}Link Expired{% endblock %}
+
+{% block extra_css %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap');
+
+:root{
+  --zk-primary:#00f5d4;--zk-secondary:#0066ff;--zk-accent:#7b2fff;
+  --zk-danger:#ff2d55;--zk-dark:#020b18;--zk-border:rgba(0,245,212,.14);
+  --zk-text:#e0f7f4;--zk-muted:rgba(224,247,244,.5);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--zk-dark);color:var(--zk-text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden}
+
+/* BG - unique for expired: danger/red tint */
+.bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(255,45,85,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,45,85,.02) 1px,transparent 1px);background-size:50px 50px;animation:gridBreath 8s ease-in-out infinite}
+@keyframes gridBreath{0%,100%{opacity:.5}50%{opacity:1}}
+.bg-orb{position:fixed;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0}
+.bg-orb-1{width:500px;height:500px;background:var(--zk-danger);opacity:.06;top:-150px;right:-150px;animation:orbDrift 18s ease-in-out infinite}
+.bg-orb-2{width:350px;height:350px;background:#ff6b00;opacity:.04;bottom:-100px;left:-100px;animation:orbDrift 22s ease-in-out infinite reverse}
+@keyframes orbDrift{0%{transform:translate(0,0)}50%{transform:translate(20px,-20px)}100%{transform:translate(0,0)}}
+.scanlines{position:fixed;inset:0;z-index:1;pointer-events:none;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(255,45,85,.006) 2px,rgba(255,45,85,.006) 4px)}
+
+/* UNIQUE EXPIRED BG: diagonal slash lines */
+.slash-bg{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.025;background-image:repeating-linear-gradient(45deg,var(--zk-danger) 0px,var(--zk-danger) 1px,transparent 1px,transparent 30px)}
+
+/* GLITCH EFFECT for expired icon */
+.glitch-wrap{position:relative;display:inline-block;animation:glitchContainer .2s ease-in-out infinite;animation-play-state:running}
+@keyframes glitchContainer{0%,94%,100%{transform:none}95%{transform:translate(-2px,1px)}97%{transform:translate(2px,-1px)}}
+.glitch-wrap::before,.glitch-wrap::after{content:attr(data-icon);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:inherit;animation:glitchDelay 4s infinite}
+.glitch-wrap::before{color:var(--zk-danger);clip-path:polygon(0 30%,100% 30%,100% 50%,0 50%);animation:glitchBefore 4s infinite}
+.glitch-wrap::after{color:var(--zk-secondary);clip-path:polygon(0 60%,100% 60%,100% 75%,0 75%);animation:glitchAfter 4s infinite}
+@keyframes glitchBefore{0%,90%,100%{transform:none;opacity:0}91%{transform:translate(-3px,1px);opacity:1}93%{transform:translate(2px,-1px);opacity:1}95%{opacity:0}}
+@keyframes glitchAfter{0%,92%,100%{transform:none;opacity:0}93%{transform:translate(3px,2px);opacity:1}95%{transform:translate(-2px,-2px);opacity:1}97%{opacity:0}}
+
+/* STATIC SCAN LINE */
+.static-scan{position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,var(--zk-danger),transparent);animation:staticScan 8s linear infinite;z-index:3;opacity:.5}
+@keyframes staticScan{0%{transform:translateY(-3px)}100%{transform:translateY(100vh)}}
+
+/* Broken link particles */
+.broken-particle{position:fixed;pointer-events:none;z-index:1;font-size:.7rem;opacity:0;animation:brokenFall linear infinite;color:var(--zk-danger)}
+@keyframes brokenFall{0%{transform:translateY(-50px) rotate(0deg);opacity:0}10%{opacity:.4}80%{opacity:.2}100%{transform:translateY(110vh) rotate(180deg);opacity:0}}
+
+/* AUTH */
+.auth-page{position:relative;z-index:2;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 16px}
+.auth-container{width:100%;max-width:440px;animation:authIn .8s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes authIn{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:translateY(0)}}
+
+/* BRAND */
+.auth-brand{text-align:center;margin-bottom:28px;animation:fadeDown .6s .1s both}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+.brand-logo{display:inline-flex;align-items:center;gap:12px;margin-bottom:8px}
+.logo-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--zk-danger),#ff6b00);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:#fff;box-shadow:0 0 20px rgba(255,45,85,.35);animation:logoPulse 3s ease-in-out infinite}
+@keyframes logoPulse{0%,100%{box-shadow:0 0 20px rgba(255,45,85,.35)}50%{box-shadow:0 0 40px rgba(255,45,85,.7)}}
+.brand-name{font-family:'Orbitron',monospace;font-size:1.5rem;font-weight:900;color:var(--zk-danger);letter-spacing:3px}
+
+/* CARD */
+.auth-card{background:rgba(4,15,30,.9);border:1px solid rgba(255,45,85,.2);backdrop-filter:blur(24px);padding:36px;position:relative;overflow:hidden;animation:cardIn .7s .2s both;text-align:center}
+@keyframes cardIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+.auth-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--zk-danger),#ff6b00,transparent);animation:topBeam 3s linear infinite}
+@keyframes topBeam{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}
+.corner-tl,.corner-br{position:absolute;width:18px;height:18px;pointer-events:none}
+.corner-tl{top:12px;left:12px;border-top:2px solid var(--zk-danger);border-left:2px solid var(--zk-danger)}
+.corner-br{bottom:12px;right:12px;border-bottom:2px solid var(--zk-danger);border-right:2px solid var(--zk-danger)}
+
+/* EXPIRED ICON */
+.expired-icon-wrap{margin-bottom:20px;animation:iconReveal .6s .3s both}
+@keyframes iconReveal{0%{transform:scale(0) rotate(-15deg);opacity:0}70%{transform:scale(1.12) rotate(3deg)}100%{transform:scale(1) rotate(0);opacity:1}}
+.expired-icon{width:80px;height:80px;background:rgba(255,45,85,.1);border:1px solid rgba(255,45,85,.3);display:inline-flex;align-items:center;justify-content:center;font-size:2rem;position:relative}
+.expired-icon::before{content:'';position:absolute;inset:-1px;border:1px solid rgba(255,45,85,.15);animation:rippleOut 2.5s ease-out infinite .5s}
+.expired-icon::after{content:'';position:absolute;inset:-1px;border:1px solid rgba(255,45,85,.08);animation:rippleOut 2.5s ease-out infinite 1s}
+@keyframes rippleOut{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.6);opacity:0}}
+
+.auth-title{font-family:'Orbitron',monospace;font-size:1.2rem;font-weight:900;letter-spacing:1px;margin-bottom:10px;color:var(--zk-text);animation:fadeIn .5s .5s both;opacity:0}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.auth-subtitle{color:var(--zk-muted);font-size:.95rem;margin-bottom:24px;line-height:1.6;animation:fadeIn .5s .6s both;opacity:0}
+
+/* STATUS CODES */
+.error-codes{font-family:'JetBrains Mono',monospace;font-size:.7rem;margin-bottom:24px;animation:fadeIn .5s .7s both;opacity:0}
+.error-code-row{display:flex;justify-content:space-between;padding:6px 10px;border-bottom:1px solid rgba(255,45,85,.1)}
+.error-code-row:last-child{border-bottom:none}
+.code-key{color:rgba(224,247,244,.4)}
+.code-val{color:var(--zk-danger)}
+.code-val.ok{color:#10b981}
+
+/* BUTTONS */
+.btn-zk-primary{background:linear-gradient(135deg,var(--zk-primary),var(--zk-secondary));color:#020b18!important;font-family:'Orbitron',monospace;font-size:.72rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:13px 28px;border:none;border-radius:0;cursor:pointer;position:relative;overflow:hidden;transition:all .3s;clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);display:inline-flex;align-items:center;justify-content:center;gap:8px;width:100%;animation:btnReveal .5s .8s both;text-decoration:none}
+@keyframes btnReveal{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.btn-zk-primary:hover{transform:translateY(-2px);box-shadow:0 12px 40px rgba(0,245,212,.35);filter:brightness(1.1);color:#020b18!important}
+.btn-zk-primary::before{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:skewX(-20deg);transition:left .5s}
+.btn-zk-primary:hover::before{left:150%}
+
+.link{color:var(--zk-primary);text-decoration:none;font-weight:600;transition:all .3s}
+.link:hover{color:#fff;text-shadow:0 0 10px var(--zk-primary)}
+
+/* COUNTDOWN */
+.countdown-bar{height:3px;background:rgba(255,45,85,.15);margin-top:20px;margin-bottom:8px;overflow:hidden}
+.countdown-fill{height:100%;background:linear-gradient(90deg,var(--zk-danger),#ff6b00);width:100%;animation:countdownShrink 30s linear forwards}
+@keyframes countdownShrink{0%{width:100%}100%{width:0%}}
+.countdown-label{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:rgba(255,45,85,.5);text-align:center}
+
+/* TOAST */
+.toast-container{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+</style>
+{% endblock %}
+
+{% block body %}
+<!-- BG LAYERS -->
+<div class="bg-grid"></div>
+<div class="slash-bg"></div>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div class="scanlines"></div>
+<div class="static-scan"></div>
+<div id="brokenParticles"></div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="auth-page">
+  <div class="auth-container">
+
+    <!-- BRAND -->
+    <div class="auth-brand">
+      <div class="brand-logo">
+        <span class="logo-icon"><i class="fa-solid fa-link-slash"></i></span>
+        <span class="brand-name">ZK VAULT</span>
+      </div>
+    </div>
+
+    <!-- CARD -->
+    <div class="auth-card">
+      <div class="corner-tl"></div>
+      <div class="corner-br"></div>
+
+      <!-- GLITCHING BROKEN LINK ICON -->
+      <div class="expired-icon-wrap">
+        <div class="expired-icon">
+          <div class="glitch-wrap" data-icon="🔗">
+            <i class="fa-solid fa-link-slash" style="color:var(--zk-danger)"></i>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="auth-title">Link Expired or Invalid</h2>
+      <p class="auth-subtitle">
+        This share link has expired, been revoked, or reached its download limit.
+        Please contact the file owner for a new link.
+      </p>
+
+      <!-- ERROR STATUS TABLE -->
+      <div class="error-codes">
+        <div class="error-code-row">
+          <span class="code-key">STATUS</span>
+          <span class="code-val">403_LINK_EXPIRED</span>
+        </div>
+        <div class="error-code-row">
+          <span class="code-key">ENCRYPTION</span>
+          <span class="code-val ok">ACTIVE ✓</span>
+        </div>
+        <div class="error-code-row">
+          <span class="code-key">ACCESS</span>
+          <span class="code-val">DENIED</span>
+        </div>
+        <div class="error-code-row">
+          <span class="code-key">ZERO_KNOWLEDGE</span>
+          <span class="code-val ok">INTACT ✓</span>
+        </div>
+      </div>
+
+      <a href="/" class="btn-zk-primary">
+        <i class="fa-solid fa-arrow-left"></i> Go to ZK Vault
+      </a>
+
+      <div style="margin-top:20px;font-size:12px;color:var(--zk-muted)">
+        Have an account? <a href="{% url 'login' %}" class="link">Sign in</a>
+        &nbsp;·&nbsp;
+        <a href="{% url 'register' %}" class="link">Create vault</a>
+      </div>
+
+      <!-- Auto-redirect countdown -->
+      <div class="countdown-bar mt-4"><div class="countdown-fill"></div></div>
+      <div class="countdown-label">Auto-redirecting in 30 seconds...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Broken link particles falling
+(function(){
+  const c=document.getElementById('brokenParticles');
+  const symbols=['⛓','🔗','✕','×','⚠','!'];
+  for(let i=0;i<16;i++){
+    const el=document.createElement('div');
+    el.className='broken-particle';
+    el.textContent=symbols[i%symbols.length];
+    el.style.cssText=`left:${Math.random()*100}vw;animation-duration:${12+Math.random()*12}s;animation-delay:${-Math.random()*20}s`;
+    c.appendChild(el);
+  }
+})();
+
+// Auto redirect after 30s
+setTimeout(()=>{ window.location.href='/'; }, 30000);
+</script>
+{% endblock %}

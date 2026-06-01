@@ -1,0 +1,197 @@
+<!-- ═══════════════════════════════════════════
+     ACCESS CONTROL — access.html
+     ═══════════════════════════════════════════ -->
+{% extends 'app_base.html' %}
+{% block title %}Access Control{% endblock %}
+{% block page_title %}Access Control{% endblock %}
+
+{% block extra_css %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap');
+:root{--zk-primary:#00f5d4;--zk-secondary:#0066ff;--zk-accent:#7b2fff;--zk-border:rgba(0,245,212,.14);--zk-border-2:rgba(0,245,212,.28);--zk-text:#e0f7f4;--zk-muted:rgba(224,247,244,.5);--zk-success:#10b981;--zk-warning:#f59e0b;--zk-danger:#ff2d55}
+
+.page-header h1{font-family:'Orbitron',monospace;font-weight:900;font-size:1.5rem;letter-spacing:1px;animation:hIn .6s .1s both}
+.page-header p{color:var(--zk-muted);animation:hIn .5s .2s both}
+@keyframes hIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+
+/* CARDS */
+.zk-card{background:rgba(4,15,30,.88);border:1px solid var(--zk-border);padding:24px;position:relative;overflow:hidden;animation:cardIn .6s both;height:100%}
+@keyframes cardIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+/* accent beam — purple for Access Control */
+.zk-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--zk-accent),var(--zk-primary),transparent);animation:beam 4s linear infinite}
+@keyframes beam{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
+.zk-card-title{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;letter-spacing:1px;margin-bottom:4px}
+.zk-card-sub{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:2px;color:var(--zk-muted);text-transform:uppercase;margin-bottom:20px}
+
+/* FORM */
+.form-label-zk{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--zk-muted);margin-bottom:7px;display:block}
+.form-group-zk{margin-bottom:16px}
+.zk-select{width:100%;background:rgba(0,245,212,.04);border:1px solid var(--zk-border);color:var(--zk-text);font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:10px 14px;outline:none;cursor:pointer;transition:all .3s;-webkit-appearance:none}
+.zk-select:focus{border-color:var(--zk-primary);box-shadow:0 0 0 3px rgba(0,245,212,.1)}
+.input-wrap-zk{position:relative;display:flex;align-items:center}
+.input-icon-zk{position:absolute;left:14px;color:var(--zk-muted);font-size:.85rem;pointer-events:none;z-index:1;transition:color .3s}
+.form-input-zk{width:100%;background:rgba(0,245,212,.04);border:1px solid var(--zk-border);color:var(--zk-text);font-family:'Rajdhani',sans-serif;font-size:.95rem;padding:10px 14px 10px 40px;outline:none;transition:all .3s}
+.form-input-zk::placeholder{color:rgba(224,247,244,.3)}
+.form-input-zk:focus{border-color:var(--zk-primary);background:rgba(0,245,212,.08);box-shadow:0 0 0 3px rgba(0,245,212,.1)}
+.form-input-zk.no-icon{padding-left:14px}
+.input-wrap-zk:focus-within .input-icon-zk{color:var(--zk-primary)}
+
+/* TABLE */
+.zk-table{width:100%;border-collapse:collapse}
+.zk-table thead th{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:2px;color:var(--zk-muted);text-transform:uppercase;padding:9px 12px;border-bottom:1px solid var(--zk-border);font-weight:400}
+.zk-table tbody tr{border-bottom:1px solid rgba(0,245,212,.04);transition:all .3s;animation:rowIn .4s both}
+.zk-table tbody tr:hover{background:rgba(0,245,212,.04)}
+.zk-table tbody tr:last-child{border-bottom:none}
+.zk-table td{padding:12px 12px;font-size:.88rem;vertical-align:middle}
+@keyframes rowIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* AVATAR */
+.mini-avatar{width:28px;height:28px;background:linear-gradient(135deg,var(--zk-accent),var(--zk-secondary));display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:.55rem;font-weight:700;flex-shrink:0}
+
+/* BADGE */
+.zk-badge{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1.5px;padding:3px 8px;border:1px solid;text-transform:uppercase}
+.zk-badge.manage{border-color:rgba(245,158,11,.35);color:var(--zk-warning);background:rgba(245,158,11,.08)}
+.zk-badge.download{border-color:rgba(0,102,255,.35);color:var(--zk-secondary);background:rgba(0,102,255,.08)}
+.zk-badge.view{border-color:var(--zk-border);color:var(--zk-muted);background:transparent}
+.zk-badge.active{border-color:rgba(16,185,129,.35);color:var(--zk-success);background:rgba(16,185,129,.08)}
+.zk-badge.revoked{border-color:rgba(255,45,85,.35);color:var(--zk-danger);background:rgba(255,45,85,.08)}
+.zk-badge.pending{border-color:rgba(245,158,11,.35);color:var(--zk-warning);background:rgba(245,158,11,.08)}
+
+/* BUTTONS */
+.btn-zk-primary{background:linear-gradient(135deg,var(--zk-primary),var(--zk-secondary));color:#020b18!important;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:12px 24px;border:none;cursor:pointer;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);transition:all .3s;display:inline-flex;align-items:center;gap:8px;width:100%;justify-content:center;position:relative;overflow:hidden}
+.btn-zk-primary:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,245,212,.3);color:#020b18!important}
+.btn-zk-primary::before{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:skewX(-20deg);transition:left .5s}
+.btn-zk-primary:hover::before{left:150%}
+.btn-zk-danger{background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.3);color:var(--zk-danger);font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:6px 14px;cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;gap:6px;text-transform:uppercase}
+.btn-zk-danger:hover{background:rgba(255,45,85,.18);box-shadow:0 0 12px rgba(255,45,85,.2)}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--zk-muted)}
+.empty-state i{font-size:2.5rem;display:block;margin-bottom:12px;opacity:.3}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Access Control</h1>
+    <p>Manage who can view, download, or edit your encrypted files</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- GRANT ACCESS -->
+  <div class="col-lg-5" style="animation-delay:.1s">
+    <div class="zk-card">
+      <div class="zk-card-title">Grant Access</div>
+      <div class="zk-card-sub">Invite someone to a file</div>
+
+      <div class="form-group-zk">
+        <label class="form-label-zk">Select File</label>
+        <select class="zk-select" id="accessFileSelector">
+          <option value="">— Choose a file —</option>
+          {% for file in files %}
+          <option value="{{ file.id }}" {% if selected_file and selected_file.id == file.id %}selected{% endif %}>{{ file.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group-zk">
+        <label class="form-label-zk">Email Address</label>
+        <div class="input-wrap-zk">
+          <i class="fa-solid fa-envelope input-icon-zk"></i>
+          <input type="email" class="form-input-zk" id="accessEmail" placeholder="colleague@example.com">
+        </div>
+      </div>
+      <div class="form-group-zk">
+        <label class="form-label-zk">Permission Level</label>
+        <select class="zk-select" id="accessPermission">
+          <option value="view">View Only — can preview file</option>
+          <option value="download">Download — can download file</option>
+          <option value="manage">Manage — full control</option>
+        </select>
+      </div>
+      <div class="form-group-zk">
+        <label class="form-label-zk">Access Expiry (optional)</label>
+        <input type="datetime-local" class="form-input-zk no-icon" id="accessExpiry">
+      </div>
+      <button class="btn-zk-primary" onclick="grantAccess()">
+        <i class="fa-solid fa-user-plus"></i> Grant Access
+      </button>
+    </div>
+  </div>
+
+  <!-- ACCESS RULES TABLE -->
+  <div class="col-lg-7" style="animation-delay:.2s">
+    <div class="zk-card">
+      <div class="zk-card-title">Access Rules</div>
+      <div class="zk-card-sub">{{ access_rules|length }} active rule{{ access_rules|length|pluralize }}</div>
+
+      {% if access_rules %}
+      <div class="table-responsive">
+        <table class="zk-table">
+          <thead>
+            <tr><th>User</th><th>File</th><th>Permission</th><th>Status</th><th>Granted</th><th>Action</th></tr>
+          </thead>
+          <tbody id="accessRulesTable">
+            {% for rule in access_rules %}
+            <tr id="rule_{{ rule.id }}" style="animation-delay:{{ forloop.counter0 }}0ms">
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div class="mini-avatar">{{ rule.shared_with_email|first|upper }}</div>
+                  <div>
+                    <div style="font-size:.85rem;font-weight:600">{{ rule.shared_with_email }}</div>
+                    {% if rule.expires_at %}<div style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--zk-muted)">Exp {{ rule.expires_at|date:"M d" }}</div>{% endif %}
+                  </div>
+                </div>
+              </td>
+              <td style="font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--zk-muted)">{{ rule.file.name|truncatechars:20 }}</td>
+              <td><span class="zk-badge {{ rule.permission }}">{{ rule.permission|capfirst }}</span></td>
+              <td><span class="zk-badge {% if rule.status == 'active' %}active{% elif rule.status == 'revoked' %}revoked{% else %}pending{% endif %}">{{ rule.status|capfirst }}</span></td>
+              <td style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--zk-muted)">{{ rule.granted_at|timesince }} ago</td>
+              <td>
+                {% if rule.status == 'active' %}
+                <button class="btn-zk-danger" onclick="revokeAccess({{ rule.id }})"><i class="fa-solid fa-user-minus"></i> Revoke</button>
+                {% else %}<span style="font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--zk-muted)">Revoked</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <i class="fa-solid fa-user-shield"></i>
+        No access rules configured yet.<br>Grant access to a file to get started.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function grantAccess(){
+  const fileId=document.getElementById('accessFileSelector').value;
+  const email=document.getElementById('accessEmail').value.trim();
+  const permission=document.getElementById('accessPermission').value;
+  const expiresAt=document.getElementById('accessExpiry').value;
+  if(!fileId)return showToast('Please select a file','warning');
+  if(!email)return showToast('Please enter an email address','warning');
+  const resp=await fetch('{% url "grant_access" %}',{method:'POST',headers:{'X-CSRFToken':getCsrfToken(),'Content-Type':'application/json'},body:JSON.stringify({file_id:fileId,email,permission,expires_at:expiresAt})});
+  const data=await resp.json();
+  if(data.status==='ok'){showToast(data.message,'success');document.getElementById('accessEmail').value='';document.getElementById('accessExpiry').value='';setTimeout(()=>location.reload(),1500);}
+  else showToast(data.message||'Failed to grant access','danger');
+}
+async function revokeAccess(ruleId){
+  if(!confirm('Revoke this access rule?'))return;
+  const resp=await fetch(`/api/access/${ruleId}/revoke/`,{method:'POST',headers:{'X-CSRFToken':getCsrfToken()}});
+  const data=await resp.json();
+  if(data.status==='ok'){
+    const row=document.getElementById('rule_'+ruleId);
+    row?.querySelectorAll('td')[3]?.replaceChildren(Object.assign(document.createElement('span'),{className:'zk-badge revoked',textContent:'Revoked'}));
+    row?.querySelector('button')?.replaceWith(Object.assign(document.createElement('span'),{style:'font-family:"JetBrains Mono",monospace;font-size:.65rem;color:var(--zk-muted)',textContent:'Revoked'}));
+    showToast(data.message,'success');
+  }
+}
+</script>
+{% endblock %}

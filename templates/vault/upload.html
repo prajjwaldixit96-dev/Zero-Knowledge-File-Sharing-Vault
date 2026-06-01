@@ -1,0 +1,275 @@
+{% extends 'app_base.html' %}
+{% block title %}Upload Files{% endblock %}
+{% block page_title %}Upload Files{% endblock %}
+
+{% block extra_css %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap');
+:root{--zk-primary:#00f5d4;--zk-secondary:#0066ff;--zk-accent:#7b2fff;--zk-dark:#020b18;--zk-border:rgba(0,245,212,.14);--zk-border-2:rgba(0,245,212,.28);--zk-text:#e0f7f4;--zk-muted:rgba(224,247,244,.5);--zk-success:#10b981;--zk-warning:#f59e0b;--zk-danger:#ff2d55}
+
+/* HEADER */
+.page-header h1{font-family:'Orbitron',monospace;font-weight:900;font-size:1.5rem;letter-spacing:1px;animation:hdrIn .6s .1s both}
+.page-header p{color:var(--zk-muted);animation:hdrIn .5s .2s both}
+@keyframes hdrIn{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+
+/* CARDS */
+.zk-card{background:rgba(4,15,30,.88);border:1px solid var(--zk-border);padding:24px;position:relative;overflow:hidden;animation:cardUp .6s both}
+@keyframes cardUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.zk-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--zk-primary),var(--zk-accent),transparent);animation:beam 4s linear infinite}
+@keyframes beam{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
+
+/* DROP ZONE — UNIQUE: hex pulse rings */
+.drop-zone-zk{
+  border:2px dashed var(--zk-border-2);
+  padding:52px 24px;
+  text-align:center;
+  position:relative;
+  cursor:pointer;
+  transition:all .4s;
+  overflow:hidden;
+  background:rgba(0,245,212,.02);
+}
+.drop-zone-zk:hover,.drop-zone-zk.drag-over{
+  border-color:var(--zk-primary);
+  background:rgba(0,245,212,.06);
+  box-shadow:inset 0 0 40px rgba(0,245,212,.06);
+}
+.drop-zone-zk.drag-over{ animation:dropPulse .6s ease-in-out infinite; }
+@keyframes dropPulse{0%,100%{box-shadow:inset 0 0 40px rgba(0,245,212,.06)}50%{box-shadow:inset 0 0 80px rgba(0,245,212,.15)}}
+
+/* Rings in drop zone */
+.dz-ring{position:absolute;top:50%;left:50%;border-radius:50%;border:1px solid rgba(0,245,212,.1);transform:translate(-50%,-50%);pointer-events:none;animation:dzRing 4s ease-out infinite}
+.dz-ring-1{width:200px;height:200px}
+.dz-ring-2{width:300px;height:300px;animation-delay:-1.5s}
+.dz-ring-3{width:400px;height:400px;animation-delay:-3s}
+@keyframes dzRing{0%{transform:translate(-50%,-50%) scale(.8);opacity:.5}100%{transform:translate(-50%,-50%) scale(1.2);opacity:0}}
+
+.dz-icon{font-size:3rem;color:var(--zk-primary);margin-bottom:16px;display:block;animation:iconFloat 3s ease-in-out infinite}
+@keyframes iconFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.dz-title{font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:700;letter-spacing:1px;margin-bottom:8px}
+.dz-sub{color:var(--zk-muted);font-size:.9rem;margin-bottom:16px}
+.dz-type-badge{font-family:'JetBrains Mono',monospace;font-size:.62rem;letter-spacing:1.5px;padding:3px 10px;border:1px solid var(--zk-border-2);color:var(--zk-muted);margin:0 3px;text-transform:uppercase;transition:all .3s}
+.dz-type-badge:hover{border-color:var(--zk-primary);color:var(--zk-primary)}
+
+/* SECURITY PILLS */
+.sec-pill{display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(4,15,30,.7);border:1px solid var(--zk-border);position:relative;overflow:hidden;transition:all .3s;animation:fadeUp .5s both}
+.sec-pill:hover{border-color:var(--zk-border-2);transform:translateY(-2px)}
+.sec-pill::before{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--c);box-shadow:0 0 8px var(--c)}
+.sec-pill-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0;background:rgba(var(--cr),.1);color:var(--c)}
+.sec-pill-title{font-size:.85rem;font-weight:700;margin-bottom:2px}
+.sec-pill-sub{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--zk-muted)}
+.sec-pill:nth-child(1){animation-delay:.1s}.sec-pill:nth-child(2){animation-delay:.2s}.sec-pill:nth-child(3){animation-delay:.3s}
+
+/* QUEUE */
+.queue-card-title{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;letter-spacing:1px;margin-bottom:4px}
+.queue-card-sub{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:2px;color:var(--zk-muted);text-transform:uppercase}
+
+.upload-item-zk{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid rgba(0,245,212,.06);animation:itemIn .4s both}
+@keyframes itemIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+.upload-item-zk:last-child{border-bottom:none}
+.up-icon{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;clip-path:polygon(8px 0%,100% 0%,100% calc(100% - 8px),calc(100% - 8px) 100%,0% 100%,0% 8px)}
+.up-name{font-size:.88rem;font-weight:600;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.up-meta{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--zk-muted);margin-bottom:8px}
+
+/* Progress bar */
+.up-progress{height:3px;background:rgba(0,245,212,.1);overflow:hidden;margin-bottom:5px}
+.up-progress-fill{height:100%;background:linear-gradient(90deg,var(--zk-primary),var(--zk-secondary));transition:width .4s ease;box-shadow:0 0 8px rgba(0,245,212,.4)}
+.up-progress-fill.done{background:linear-gradient(90deg,var(--zk-success),#06d6a0)}
+.up-pct{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--zk-muted);transition:color .3s}
+.up-pct.done{color:var(--zk-success)}
+
+.enc-tag{font-family:'JetBrains Mono',monospace;font-size:.6rem;letter-spacing:1px;padding:2px 8px;border:1px solid rgba(0,245,212,.2);color:var(--zk-primary);background:rgba(0,245,212,.06);display:inline-flex;align-items:center;gap:4px;animation:encPulse 2s ease-in-out infinite}
+@keyframes encPulse{0%,100%{opacity:.7}50%{opacity:1}}
+
+/* BUTTONS */
+.btn-zk-primary{background:linear-gradient(135deg,var(--zk-primary),var(--zk-secondary));color:#020b18!important;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:11px 24px;border:none;cursor:pointer;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);transition:all .3s;display:inline-flex;align-items:center;gap:8px;position:relative;overflow:hidden}
+.btn-zk-primary:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,245,212,.3);color:#020b18!important}
+.btn-zk-primary::before{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:skewX(-20deg);transition:left .5s}
+.btn-zk-primary:hover::before{left:150%}
+.btn-zk-ghost{background:transparent;border:1px solid var(--zk-border-2);color:var(--zk-muted);font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:8px 16px;cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;gap:6px}
+.btn-zk-ghost:hover{border-color:var(--zk-primary);color:var(--zk-primary)}
+
+/* EMPTY QUEUE */
+.empty-queue{text-align:center;padding:36px 20px;color:var(--zk-muted)}
+.empty-queue i{font-size:2rem;display:block;margin-bottom:10px;opacity:.3}
+.empty-queue p{font-family:'JetBrains Mono',monospace;font-size:.72rem;letter-spacing:1px}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Upload Files</h1>
+    <p>Files are encrypted with AES-256 before storage · Max file size: 500 MB</p>
+  </div>
+</div>
+
+<!-- DROP ZONE CARD -->
+<div class="zk-card mb-4" style="animation-delay:.1s">
+  <div class="drop-zone-zk" id="dropZone">
+    <div class="dz-ring dz-ring-1"></div>
+    <div class="dz-ring dz-ring-2"></div>
+    <div class="dz-ring dz-ring-3"></div>
+    <i class="fa-solid fa-cloud-arrow-up dz-icon"></i>
+    <div class="dz-title">Drop files to encrypt &amp; upload</div>
+    <div class="dz-sub">or click to browse your files</div>
+    <div class="mb-4">
+      <span class="dz-type-badge">PDF</span>
+      <span class="dz-type-badge">Images</span>
+      <span class="dz-type-badge">Documents</span>
+      <span class="dz-type-badge">Archives</span>
+      <span class="dz-type-badge">Videos</span>
+      <span class="dz-type-badge">Any</span>
+    </div>
+    <button class="btn-zk-primary" onclick="document.getElementById('fileInput').click()">
+      <i class="fa-solid fa-folder-open"></i> Browse Files
+    </button>
+    <input type="file" id="fileInput" multiple style="display:none">
+  </div>
+
+  <!-- SECURITY PILLS -->
+  <div class="row g-3 mt-3">
+    <div class="col-md-4">
+      <div class="sec-pill" style="--c:#0066ff;--cr:0,102,255;animation-delay:.2s">
+        <div class="sec-pill-icon"><i class="fa-solid fa-lock"></i></div>
+        <div><div class="sec-pill-title">AES-256 Encryption</div><div class="sec-pill-sub">Military-grade</div></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="sec-pill" style="--c:#00f5d4;--cr:0,245,212;animation-delay:.3s">
+        <div class="sec-pill-icon"><i class="fa-solid fa-key"></i></div>
+        <div><div class="sec-pill-title">Zero Knowledge</div><div class="sec-pill-sub">Keys stay on device</div></div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="sec-pill" style="--c:#10b981;--cr:16,185,129;animation-delay:.4s">
+        <div class="sec-pill-icon"><i class="fa-solid fa-shield-halved"></i></div>
+        <div><div class="sec-pill-title">Secure Transfer</div><div class="sec-pill-sub">TLS 1.3 in transit</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD QUEUE -->
+<div class="zk-card" style="animation-delay:.3s">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <div class="queue-card-title">Upload Queue</div>
+      <div class="queue-card-sub">Files pending encryption &amp; upload</div>
+    </div>
+    <button class="btn-zk-ghost" id="clearQueueBtn" style="display:none" onclick="clearQueue()">
+      <i class="fa-solid fa-broom"></i> Clear Done
+    </button>
+  </div>
+
+  <div id="uploadQueue">
+    <div id="emptyQueue" class="empty-queue">
+      <i class="fa-solid fa-inbox"></i>
+      <p>Select files above to begin uploading</p>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+const queue    = document.getElementById('uploadQueue');
+const emptyQ   = document.getElementById('emptyQueue');
+
+dropZone.addEventListener('dragover', e=>{ e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', ()=>dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e=>{ e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+dropZone.addEventListener('click', e=>{ if(e.target.tagName!=='BUTTON'&&!e.target.closest('button')) fileInput.click(); });
+fileInput.addEventListener('change', e=>handleFiles(e.target.files));
+
+const typeMap={
+  pdf:['fa-file-pdf','#ff2d55','rgba(255,45,85,.12)'],
+  img:['fa-file-image','#00f5d4','rgba(0,245,212,.12)'],
+  doc:['fa-file-word','#0066ff','rgba(0,102,255,.12)'],
+  zip:['fa-file-zipper','#f59e0b','rgba(245,158,11,.12)'],
+  vid:['fa-file-video','#7b2fff','rgba(123,47,255,.12)'],
+  other:['fa-file','#0066ff','rgba(0,102,255,.12)']
+};
+
+function guessType(name){
+  const e=name.split('.').pop().toLowerCase();
+  if(['pdf'].includes(e))return'pdf';
+  if(['jpg','jpeg','png','gif','webp','svg'].includes(e))return'img';
+  if(['doc','docx','txt','xls','xlsx','ppt','pptx','csv'].includes(e))return'doc';
+  if(['zip','rar','7z','tar','gz'].includes(e))return'zip';
+  if(['mp4','avi','mov','mkv','webm'].includes(e))return'vid';
+  return'other';
+}
+function fmtSize(b){if(b<1024)return b+' B';if(b<1048576)return(b/1024).toFixed(1)+' KB';if(b<1073741824)return(b/1048576).toFixed(1)+' MB';return(b/1073741824).toFixed(2)+' GB';}
+
+async function handleFiles(files){
+  if(!files.length)return;
+  emptyQ.style.display='none';
+  document.getElementById('clearQueueBtn').style.display='';
+  const formData=new FormData();
+  Array.from(files).forEach(f=>formData.append('files',f));
+
+  const items=Array.from(files).map(f=>{
+    const type=guessType(f.name);
+    const [icon,color,bg]=typeMap[type];
+    const uid='up_'+Date.now()+Math.random().toString(36).slice(2);
+    const el=document.createElement('div');
+    el.className='upload-item-zk'; el.id=uid;
+    el.innerHTML=`
+      <div class="up-icon" style="background:${bg};color:${color}"><i class="fa-solid ${icon}"></i></div>
+      <div class="flex-grow-1 overflow-hidden">
+        <div class="up-name">${f.name}</div>
+        <div class="up-meta">${fmtSize(f.size)}</div>
+        <div class="up-progress"><div class="up-progress-fill" id="${uid}_p" style="width:8%"></div></div>
+        <div class="d-flex align-items-center justify-content-between mt-1">
+          <span class="up-pct" id="${uid}_t">Encrypting...</span>
+          <span class="enc-tag"><i class="fa-solid fa-lock"></i> AES-256</span>
+        </div>
+      </div>`;
+    queue.appendChild(el);
+    return {uid,name:f.name};
+  });
+
+  items.forEach(({uid})=>{
+    let p=8;
+    const t=setInterval(()=>{ p=Math.min(p+Math.random()*18,85); const el=document.getElementById(uid+'_p'); if(el)el.style.width=p+'%'; },350);
+    window['t_'+uid]=t;
+  });
+
+  try{
+    const resp=await fetch('{% url "upload" %}',{method:'POST',headers:{'X-CSRFToken':getCsrfToken()},body:formData});
+    const data=await resp.json();
+    (data.files||[]).forEach((r,i)=>{
+      const{uid}=items[i]||{};
+      if(!uid)return;
+      clearInterval(window['t_'+uid]);
+      const p=document.getElementById(uid+'_p');
+      const t=document.getElementById(uid+'_t');
+      if(r.status==='ok'){
+        if(p){p.style.width='100%';p.classList.add('done')}
+        if(t){t.textContent='✓ Encrypted & Uploaded';t.classList.add('done')}
+        showToast(`${r.name} uploaded successfully`,'success');
+      } else {
+        if(p){p.style.background='var(--zk-danger)';p.style.width='100%'}
+        if(t){t.textContent='Failed';t.style.color='var(--zk-danger)'}
+        showToast(`${r.name}: ${r.message}`,'danger');
+      }
+    });
+  } catch(e){
+    items.forEach(({uid})=>{ clearInterval(window['t_'+uid]); const t=document.getElementById(uid+'_t'); if(t){t.textContent='Error';t.style.color='var(--zk-danger)'} });
+    showToast('Upload failed. Please try again.','danger');
+  }
+  fileInput.value='';
+}
+
+function clearQueue(){
+  emptyQ.style.display='';
+  document.querySelectorAll('#uploadQueue .upload-item-zk').forEach(el=>el.remove());
+  document.getElementById('clearQueueBtn').style.display='none';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends 'app_base.html' %}
+{% block title %}Activity Logs{% endblock %}
+{% block page_title %}Activity Logs{% endblock %}
+
+{% block extra_css %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap');
+:root{--zk-primary:#00f5d4;--zk-secondary:#0066ff;--zk-accent:#7b2fff;--zk-border:rgba(0,245,212,.14);--zk-border-2:rgba(0,245,212,.28);--zk-text:#e0f7f4;--zk-muted:rgba(224,247,244,.5);--zk-success:#10b981;--zk-warning:#f59e0b;--zk-danger:#ff2d55}
+
+.page-header h1{font-family:'Orbitron',monospace;font-weight:900;font-size:1.5rem;letter-spacing:1px;animation:hIn .6s .1s both}
+.page-header p{color:var(--zk-muted);animation:hIn .5s .2s both}
+@keyframes hIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+
+.zk-card{background:rgba(4,15,30,.88);border:1px solid var(--zk-border);padding:24px;position:relative;overflow:hidden;animation:cardIn .6s .1s both}
+@keyframes cardIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+/* LOGS accent: amber/warm tone */
+.zk-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--zk-warning),var(--zk-primary),transparent);animation:beam 4s linear infinite}
+@keyframes beam{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
+
+/* SEARCH */
+.zk-search-wrap{position:relative;flex:1;max-width:280px}
+.zk-search-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--zk-muted);font-size:.85rem;pointer-events:none}
+.zk-search-wrap input{width:100%;background:rgba(0,245,212,.04);border:1px solid var(--zk-border);color:var(--zk-text);font-family:'Rajdhani',sans-serif;font-size:.9rem;padding:9px 14px 9px 36px;outline:none;transition:all .3s}
+.zk-search-wrap input:focus{border-color:var(--zk-primary);background:rgba(0,245,212,.08);box-shadow:0 0 0 3px rgba(0,245,212,.1)}
+.zk-search-wrap input::placeholder{color:rgba(224,247,244,.3)}
+.zk-select{background:rgba(0,245,212,.04);border:1px solid var(--zk-border);color:var(--zk-text);font-family:'JetBrains Mono',monospace;font-size:.72rem;padding:9px 14px;outline:none;cursor:pointer;transition:all .3s;-webkit-appearance:none}
+.zk-select:focus{border-color:var(--zk-primary)}
+
+/* BUTTONS */
+.btn-zk-sm{font-family:'JetBrains Mono',monospace;font-size:.65rem;letter-spacing:1.5px;padding:7px 14px;border:1px solid var(--zk-border-2);background:transparent;color:var(--zk-muted);cursor:pointer;text-decoration:none;transition:all .3s;text-transform:uppercase;display:inline-flex;align-items:center;gap:6px}
+.btn-zk-sm:hover{border-color:var(--zk-primary);color:var(--zk-primary)}
+.btn-zk-sm.ghost{border-color:var(--zk-border)}
+
+/* TIMELINE — UNIQUE: vertical glowing line */
+.timeline-zk{position:relative;padding-left:0}
+.tl-item{display:flex;gap:16px;padding:16px 0;border-bottom:1px solid rgba(0,245,212,.05);animation:tlIn .5s both;position:relative}
+.tl-item:last-child{border-bottom:none}
+{% for i in "123456789"|make_list %}.tl-item:nth-child({{i}}){animation-delay:{{i}}0ms}{% endfor %}
+@keyframes tlIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.tl-item:hover{background:rgba(0,245,212,.03)}
+
+.tl-icon{width:36px;height:36px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:.85rem;position:relative;clip-path:polygon(6px 0%,100% 0%,100% calc(100% - 6px),calc(100% - 6px) 100%,0% 100%,0% 6px)}
+.tl-icon::after{content:'';position:absolute;left:50%;top:100%;width:1px;height:100%;background:linear-gradient(180deg,rgba(0,245,212,.15),transparent);transform:translateX(-50%)}
+.tl-item:last-child .tl-icon::after{display:none}
+
+.tl-title{font-size:.9rem;font-weight:600;margin-bottom:3px}
+.tl-desc{font-size:.8rem;color:var(--zk-muted);line-height:1.5}
+.tl-time{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--zk-muted);white-space:nowrap;margin-left:auto;flex-shrink:0}
+.tl-tag{font-family:'JetBrains Mono',monospace;font-size:.58rem;letter-spacing:1.5px;padding:2px 8px;border:1px solid;text-transform:uppercase}
+
+/* PAGINATION */
+.zk-page-btn{font-family:'JetBrains Mono',monospace;font-size:.68rem;padding:7px 14px;border:1px solid var(--zk-border);background:transparent;color:var(--zk-text);cursor:pointer;transition:all .3s;text-decoration:none}
+.zk-page-btn:hover{border-color:var(--zk-primary);color:var(--zk-primary)}
+.zk-page-btn.current{border-color:var(--zk-primary);color:var(--zk-primary);background:rgba(0,245,212,.08)}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--zk-muted)}
+.empty-state i{font-size:2.5rem;display:block;margin-bottom:12px;opacity:.3}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex align-items-start justify-content-between flex-wrap gap-3">
+  <div class="page-header-left">
+    <h1>Activity Logs</h1>
+    <p>Complete audit trail of all actions in your vault</p>
+  </div>
+</div>
+
+<div class="zk-card">
+  <!-- FILTERS -->
+  <form method="get" class="d-flex align-items-center flex-wrap gap-2 mb-4">
+    <div class="zk-search-wrap">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" name="q" placeholder="Search logs..." value="{{ search_query }}">
+    </div>
+    <select name="action" class="zk-select" onchange="this.form.submit()">
+      <option value="">All actions</option>
+      {% for val,label in action_choices %}
+      <option value="{{ val }}" {% if action_filter == val %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn-zk-sm"><i class="fa-solid fa-magnifying-glass"></i> Search</button>
+    {% if search_query or action_filter %}
+    <a href="{% url 'logs' %}" class="btn-zk-sm ghost"><i class="fa-solid fa-xmark"></i> Clear</a>
+    {% endif %}
+  </form>
+
+  {% if logs %}
+  <div class="timeline-zk">
+    {% for log in logs %}
+    {% with icon=log.action_icon %}
+    <div class="tl-item">
+      <div class="tl-icon"
+        style="background:rgba({% if icon.1 == 'blue' %}0,102,255{% elif icon.1 == 'cyan' %}0,245,212{% elif icon.1 == 'green' %}16,185,129{% elif icon.1 == 'danger' %}255,45,85{% elif icon.1 == 'purple' %}123,47,255{% elif icon.1 == 'amber' %}245,158,11{% else %}100,120,150{% endif %},.14);color:{% if icon.1 == 'blue' %}#0066ff{% elif icon.1 == 'cyan' %}#00f5d4{% elif icon.1 == 'green' %}#10b981{% elif icon.1 == 'danger' %}#ff2d55{% elif icon.1 == 'amber' %}#f59e0b{% elif icon.1 == 'purple' %}#7b2fff{% else %}#889bbb{% endif %}">
+        <i class="fa-solid {{ icon.0 }}"></i>
+      </div>
+      <div class="flex-grow-1 overflow-hidden">
+        <div class="d-flex align-items-start justify-content-between gap-2">
+          <div class="tl-title">{% if log.file %}{{ log.file.name }}{% else %}{{ log.get_action_display }}{% endif %}</div>
+          <div class="tl-time">{{ log.time_ago }}</div>
+        </div>
+        <div class="tl-desc">{{ log.description }}</div>
+        <div class="d-flex gap-2 flex-wrap mt-2">
+          <span class="tl-tag" style="border-color:rgba(0,245,212,.2);color:var(--zk-primary)">{{ log.get_action_display }}</span>
+          {% if log.ip_address %}<span style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--zk-muted)"><i class="fa-solid fa-location-dot"></i> {{ log.ip_address }}</span>{% endif %}
+          <span style="font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--zk-muted)">{{ log.created_at|date:"M d, Y · H:i" }}</span>
+        </div>
+      </div>
+    </div>
+    {% endwith %}
+    {% endfor %}
+  </div>
+
+  {% if logs.has_other_pages %}
+  <div class="d-flex justify-content-center gap-2 mt-4">
+    {% if logs.has_previous %}<a href="?page={{ logs.previous_page_number }}&q={{ search_query }}&action={{ action_filter }}" class="zk-page-btn">‹ Prev</a>{% endif %}
+    <span class="zk-page-btn current">{{ logs.number }} / {{ logs.paginator.num_pages }}</span>
+    {% if logs.has_next %}<a href="?page={{ logs.next_page_number }}&q={{ search_query }}&action={{ action_filter }}" class="zk-page-btn">Next ›</a>{% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="empty-state">
+    <i class="fa-solid fa-clock-rotate-left"></i>
+    {% if search_query or action_filter %}No logs matching your filters{% else %}No activity recorded yet{% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

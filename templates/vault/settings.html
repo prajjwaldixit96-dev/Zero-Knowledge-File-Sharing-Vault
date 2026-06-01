@@ -1,0 +1,242 @@
+{% extends 'app_base.html' %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block extra_css %}
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=JetBrains+Mono:wght@300;400;700&display=swap');
+:root{--zk-primary:#00f5d4;--zk-secondary:#0066ff;--zk-accent:#7b2fff;--zk-border:rgba(0,245,212,.14);--zk-border-2:rgba(0,245,212,.28);--zk-text:#e0f7f4;--zk-muted:rgba(224,247,244,.5);--zk-success:#10b981;--zk-warning:#f59e0b;--zk-danger:#ff2d55}
+
+.page-header h1{font-family:'Orbitron',monospace;font-weight:900;font-size:1.5rem;letter-spacing:1px;animation:hIn .6s .1s both}
+.page-header p{color:var(--zk-muted);animation:hIn .5s .2s both}
+@keyframes hIn{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:translateY(0)}}
+
+/* SETTINGS NAV */
+.settings-nav-zk{background:rgba(4,15,30,.88);border:1px solid var(--zk-border);overflow:hidden;animation:cardIn .6s .1s both}
+@keyframes cardIn{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.settings-nav-zk::before{content:'';display:block;height:2px;background:linear-gradient(90deg,transparent,var(--zk-primary),transparent);animation:beam 4s linear infinite}
+@keyframes beam{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
+
+.snav-item{display:flex;align-items:center;gap:12px;padding:13px 20px;cursor:pointer;font-size:.9rem;font-weight:600;color:var(--zk-muted);border-left:2px solid transparent;transition:all .3s;border-bottom:1px solid rgba(0,245,212,.04)}
+.snav-item:last-child{border-bottom:none}
+.snav-item i{font-size:.85rem;width:16px;text-align:center}
+.snav-item:hover{color:var(--zk-text);background:rgba(0,245,212,.04);border-left-color:rgba(0,245,212,.3)}
+.snav-item.active{color:var(--zk-primary);background:rgba(0,245,212,.07);border-left-color:var(--zk-primary)}
+.snav-item.active i{color:var(--zk-primary)}
+.snav-item.danger-item{color:rgba(255,45,85,.7)}
+.snav-item.danger-item:hover,.snav-item.danger-item.active{color:var(--zk-danger);border-left-color:var(--zk-danger);background:rgba(255,45,85,.05)}
+
+/* CONTENT CARDS */
+.zk-card{background:rgba(4,15,30,.88);border:1px solid var(--zk-border);padding:24px;position:relative;overflow:hidden;margin-bottom:16px;animation:cardIn .6s .2s both}
+.zk-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--zk-primary),transparent);animation:beam 4s linear infinite}
+.zk-card-title{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:700;letter-spacing:1px;margin-bottom:16px}
+
+/* AVATAR */
+.avatar-lg-zk{width:64px;height:64px;background:linear-gradient(135deg,var(--zk-accent),var(--zk-secondary));display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;flex-shrink:0;animation:avatarPop .5s .3s both}
+@keyframes avatarPop{from{transform:scale(0) rotate(-10deg);opacity:0}80%{transform:scale(1.1)}to{transform:scale(1);opacity:1}}
+
+/* FORM */
+.form-label-zk{font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:2px;text-transform:uppercase;color:var(--zk-muted);margin-bottom:7px;display:block}
+.form-group-zk{margin-bottom:16px}
+.input-wrap-zk{position:relative;display:flex;align-items:center}
+.input-icon-zk{position:absolute;left:14px;color:var(--zk-muted);font-size:.85rem;pointer-events:none;z-index:1;transition:color .3s}
+.form-input-zk{width:100%;background:rgba(0,245,212,.04);border:1px solid var(--zk-border);color:var(--zk-text);font-family:'Rajdhani',sans-serif;font-size:.95rem;padding:10px 14px 10px 40px;outline:none;transition:all .3s}
+.form-input-zk.no-icon{padding-left:14px}
+.form-input-zk::placeholder{color:rgba(224,247,244,.3)}
+.form-input-zk:focus{border-color:var(--zk-primary);background:rgba(0,245,212,.08);box-shadow:0 0 0 3px rgba(0,245,212,.1)}
+.input-wrap-zk:focus-within .input-icon-zk{color:var(--zk-primary)}
+
+/* SETTING ROW */
+.setting-row-zk{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid rgba(0,245,212,.05);gap:16px;animation:rowIn .4s both}
+.setting-row-zk:last-child{border-bottom:none}
+@keyframes rowIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+.setting-label-zk{font-size:.9rem;font-weight:600;margin-bottom:3px}
+.setting-desc-zk{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:var(--zk-muted)}
+
+/* TOGGLE */
+.toggle-zk{position:relative;display:inline-flex;cursor:pointer;user-select:none;flex-shrink:0}
+.toggle-zk input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{width:44px;height:24px;background:rgba(0,245,212,.08);border:1px solid var(--zk-border);position:relative;transition:all .3s}
+.toggle-track::after{content:'';position:absolute;width:16px;height:16px;background:var(--zk-muted);top:3px;left:3px;transition:all .3s}
+.toggle-zk input:checked+.toggle-track{background:rgba(0,245,212,.2);border-color:var(--zk-primary)}
+.toggle-zk input:checked+.toggle-track::after{left:21px;background:var(--zk-primary);box-shadow:0 0 10px rgba(0,245,212,.5)}
+
+/* DIVIDER */
+.zk-divider{height:1px;background:var(--zk-border);margin:20px 0}
+
+/* BUTTONS */
+.btn-zk-primary{background:linear-gradient(135deg,var(--zk-primary),var(--zk-secondary));color:#020b18!important;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:11px 24px;border:none;cursor:pointer;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);transition:all .3s;display:inline-flex;align-items:center;gap:8px;position:relative;overflow:hidden}
+.btn-zk-primary:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(0,245,212,.3);color:#020b18!important}
+.btn-zk-primary::before{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);transform:skewX(-20deg);transition:left .5s}
+.btn-zk-primary:hover::before{left:150%}
+.btn-zk-ghost{background:transparent;border:1px solid var(--zk-border-2);color:var(--zk-muted);font-family:'JetBrains Mono',monospace;font-size:.7rem;padding:8px 16px;cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;gap:6px;text-transform:uppercase}
+.btn-zk-ghost:hover{border-color:var(--zk-primary);color:var(--zk-primary)}
+.btn-zk-danger-sm{background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.3);color:var(--zk-danger);font-family:'JetBrains Mono',monospace;font-size:.65rem;padding:7px 14px;cursor:pointer;transition:all .3s;display:inline-flex;align-items:center;gap:6px;text-transform:uppercase}
+.btn-zk-danger-sm:hover{background:rgba(255,45,85,.18)}
+
+/* DANGER CARD */
+.danger-card-zk{border-color:rgba(255,45,85,.2)}
+.danger-card-zk::before{background:linear-gradient(90deg,transparent,var(--zk-danger),transparent)}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="page-header-left">
+    <h1>Settings</h1>
+    <p>Manage your account, security, and vault preferences</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- NAV -->
+  <div class="col-lg-3">
+    <div class="settings-nav-zk">
+      <div class="snav-item active" onclick="showSection('profile',this)"><i class="fa-solid fa-user"></i> Profile</div>
+      <div class="snav-item" onclick="showSection('security',this)"><i class="fa-solid fa-lock"></i> Security</div>
+      <div class="snav-item" onclick="showSection('notifications',this)"><i class="fa-solid fa-bell"></i> Notifications</div>
+      <div class="snav-item" onclick="showSection('appearance',this)"><i class="fa-solid fa-palette"></i> Appearance</div>
+      <div class="snav-item danger-item" onclick="showSection('danger',this)" style="margin-top:8px"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="col-lg-9">
+
+    <!-- PROFILE -->
+    <div id="section-profile">
+      <div class="zk-card">
+        <div class="zk-card-title">Profile Information</div>
+        <div class="d-flex align-items-center gap-4 mb-4">
+          <div class="avatar-lg-zk">{{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}</div>
+          <div>
+            <div style="font-size:1rem;font-weight:700;margin-bottom:4px">{{ request.user.get_full_name }}</div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--zk-muted);margin-bottom:10px">{{ request.user.email }} · {{ request.user.profile.plan|capfirst }} Plan</div>
+            <button class="btn-zk-ghost" onclick="showToast('Avatar upload coming soon','info')"><i class="fa-solid fa-camera"></i> Change Photo</button>
+          </div>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-6">
+            <div class="form-group-zk mb-0">
+              <label class="form-label-zk">First Name</label>
+              <input type="text" class="form-input-zk no-icon" id="firstName" value="{{ request.user.first_name }}">
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="form-group-zk mb-0">
+              <label class="form-label-zk">Last Name</label>
+              <input type="text" class="form-input-zk no-icon" id="lastName" value="{{ request.user.last_name }}">
+            </div>
+          </div>
+        </div>
+        <div class="form-group-zk">
+          <label class="form-label-zk">Email Address</label>
+          <div class="input-wrap-zk">
+            <i class="fa-solid fa-envelope input-icon-zk"></i>
+            <input type="email" class="form-input-zk" id="emailField" value="{{ request.user.email }}">
+          </div>
+        </div>
+        <button class="btn-zk-primary" onclick="saveProfile()"><i class="fa-solid fa-check"></i> Save Changes</button>
+      </div>
+    </div>
+
+    <!-- SECURITY -->
+    <div id="section-security" style="display:none">
+      <div class="zk-card">
+        <div class="zk-card-title">Security Settings</div>
+        <div class="setting-row-zk" style="animation-delay:.1s">
+          <div><div class="setting-label-zk">Two-Factor Authentication</div><div class="setting-desc-zk">Add extra layer with TOTP</div></div>
+          <label class="toggle-zk"><input type="checkbox" id="toggle2fa" {% if request.user.profile.two_fa_enabled %}checked{% endif %} onchange="saveSecuritySettings()"><span class="toggle-track"></span></label>
+        </div>
+        <div class="setting-row-zk" style="animation-delay:.15s">
+          <div><div class="setting-label-zk">Login Notifications</div><div class="setting-desc-zk">Email alerts for new sign-ins</div></div>
+          <label class="toggle-zk"><input type="checkbox" id="toggleLoginNotif" {% if request.user.profile.login_notifications %}checked{% endif %} onchange="saveSecuritySettings()"><span class="toggle-track"></span></label>
+        </div>
+        <div class="setting-row-zk" style="animation-delay:.2s">
+          <div><div class="setting-label-zk">Session Timeout</div><div class="setting-desc-zk">Auto-lock after 30 min inactivity</div></div>
+          <label class="toggle-zk"><input type="checkbox" id="toggleTimeout" {% if request.user.profile.session_timeout %}checked{% endif %} onchange="saveSecuritySettings()"><span class="toggle-track"></span></label>
+        </div>
+        <div class="zk-divider"></div>
+        <div class="zk-card-title">Change Master Password</div>
+        <div class="form-group-zk">
+          <label class="form-label-zk">Current Password</label>
+          <div class="input-wrap-zk"><i class="fa-solid fa-key input-icon-zk"></i><input type="password" class="form-input-zk" id="currentPw" placeholder="Current master password"></div>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-6"><div class="form-group-zk mb-0"><label class="form-label-zk">New Password</label><div class="input-wrap-zk"><i class="fa-solid fa-key input-icon-zk"></i><input type="password" class="form-input-zk" id="newPw" placeholder="New password"></div></div></div>
+          <div class="col-6"><div class="form-group-zk mb-0"><label class="form-label-zk">Confirm Password</label><div class="input-wrap-zk"><i class="fa-solid fa-key input-icon-zk"></i><input type="password" class="form-input-zk" id="confirmPw" placeholder="Confirm password"></div></div></div>
+        </div>
+        <button class="btn-zk-primary" onclick="changePassword()"><i class="fa-solid fa-shield-halved"></i> Update Password</button>
+      </div>
+    </div>
+
+    <!-- NOTIFICATIONS -->
+    <div id="section-notifications" style="display:none">
+      <div class="zk-card">
+        <div class="zk-card-title">Notification Preferences</div>
+        <div class="setting-row-zk">
+          <div><div class="setting-label-zk">File Share Notifications</div><div class="setting-desc-zk">Notify when someone accesses your shared file</div></div>
+          <label class="toggle-zk"><input type="checkbox" {% if request.user.profile.share_notifications %}checked{% endif %} onchange="saveSecuritySettings()"><span class="toggle-track"></span></label>
+        </div>
+        <div class="setting-row-zk">
+          <div><div class="setting-label-zk">Storage Alerts</div><div class="setting-desc-zk">Alert when storage reaches 80% capacity</div></div>
+          <label class="toggle-zk"><input type="checkbox" checked onchange="showToast('Notification settings saved','success')"><span class="toggle-track"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPEARANCE -->
+    <div id="section-appearance" style="display:none">
+      <div class="zk-card">
+        <div class="zk-card-title">Appearance</div>
+        <div class="setting-row-zk">
+          <div><div class="setting-label-zk">Dark Mode</div><div class="setting-desc-zk">Toggle between dark and light theme</div></div>
+          <label class="toggle-zk"><input type="checkbox" id="themeToggle" checked onchange="toggleTheme()"><span class="toggle-track"></span></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- DANGER ZONE -->
+    <div id="section-danger" style="display:none">
+      <div class="zk-card danger-card-zk">
+        <div class="zk-card-title" style="color:var(--zk-danger)">Danger Zone</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--zk-muted);margin-bottom:20px">These actions are irreversible. Proceed with caution.</div>
+        <div class="setting-row-zk">
+          <div><div class="setting-label-zk">Delete All Files</div><div class="setting-desc-zk">Permanently delete all files from your vault</div></div>
+          <button class="btn-zk-danger-sm" onclick="showToast('Requires email confirmation','warning')">Delete All Files</button>
+        </div>
+        <div class="setting-row-zk">
+          <div><div class="setting-label-zk">Delete Account</div><div class="setting-desc-zk">Permanently remove your account and all data</div></div>
+          <button class="btn-zk-danger-sm" onclick="showToast('Account deletion requires email confirmation','warning')">Delete Account</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showSection(name, el){
+  document.querySelectorAll('[id^="section-"]').forEach(s=>s.style.display='none');
+  document.getElementById('section-'+name).style.display='';
+  document.querySelectorAll('.snav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+}
+async function saveProfile(){
+  const resp=await fetch('{% url "update_profile" %}',{method:'POST',headers:{'X-CSRFToken':getCsrfToken(),'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({first_name:document.getElementById('firstName').value,last_name:document.getElementById('lastName').value,email:document.getElementById('emailField').value})});
+  const data=await resp.json(); showToast(data.message,data.status==='ok'?'success':'danger');
+}
+async function saveSecuritySettings(){
+  const resp=await fetch('{% url "update_security" %}',{method:'POST',headers:{'X-CSRFToken':getCsrfToken(),'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({two_fa_enabled:document.getElementById('toggle2fa')?.checked?'true':'false',login_notifications:document.getElementById('toggleLoginNotif')?.checked?'true':'false',session_timeout:document.getElementById('toggleTimeout')?.checked?'true':'false'})});
+  const data=await resp.json(); showToast(data.message,data.status==='ok'?'success':'danger');
+}
+async function changePassword(){
+  const resp=await fetch('{% url "change_password" %}',{method:'POST',headers:{'X-CSRFToken':getCsrfToken(),'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({current_password:document.getElementById('currentPw').value,new_password:document.getElementById('newPw').value,confirm_password:document.getElementById('confirmPw').value})});
+  const data=await resp.json(); showToast(data.message,data.status==='ok'?'success':'danger');
+  if(data.status==='ok') ['currentPw','newPw','confirmPw'].forEach(id=>document.getElementById(id).value='');
+}
+document.addEventListener('DOMContentLoaded',()=>{ const t=document.getElementById('themeToggle'); if(t)t.checked=document.documentElement.getAttribute('data-theme')!=='light'; });
+</script>
+{% endblock %}

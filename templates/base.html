@@ -1,0 +1,244 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}ZK Vault{% endblock %} — Zero Knowledge File Sharing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="{% static 'css/zkvault.css' %}">
+
+<!-- THEME INIT — runs before page renders to avoid flash -->
+<script>
+(function(){
+  const saved = localStorage.getItem('zkvault_theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+})();
+</script>
+
+<!-- AUTH PAGES LIGHT THEME OVERRIDES -->
+<style>
+[data-theme="light"] body {
+  background: #f0f4f8 !important;
+  color: #0a1628 !important;
+}
+[data-theme="light"] .bg-grid {
+  background-image:
+    linear-gradient(rgba(0,102,255,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,102,255,.04) 1px, transparent 1px) !important;
+}
+[data-theme="light"] .bg-glow-1 { background: rgba(0,245,212,.08) !important; }
+[data-theme="light"] .bg-glow-2 { background: rgba(0,102,255,.06) !important; }
+
+/* AUTH CARD */
+[data-theme="light"] .auth-card {
+  background: rgba(255,255,255,.97) !important;
+  border-color: rgba(0,102,255,.15) !important;
+  box-shadow: 0 8px 40px rgba(0,0,0,.1) !important;
+}
+[data-theme="light"] .auth-title   { color: #0a1628 !important; }
+[data-theme="light"] .auth-subtitle { color: rgba(10,22,40,.5) !important; }
+[data-theme="light"] .auth-tagline  { color: rgba(10,22,40,.4) !important; }
+[data-theme="light"] .brand-name    { color: #007a68 !important; }
+
+/* FORM */
+[data-theme="light"] .form-label { color: rgba(10,22,40,.45) !important; }
+[data-theme="light"] .form-input {
+  background: #f0f4f8 !important;
+  border-color: rgba(0,102,255,.18) !important;
+  color: #0a1628 !important;
+}
+[data-theme="light"] .form-input::placeholder { color: rgba(10,22,40,.3) !important; }
+[data-theme="light"] .form-input:focus {
+  background: #e6f7f5 !important;
+  border-color: #007a68 !important;
+  box-shadow: 0 0 0 3px rgba(0,138,120,.12) !important;
+}
+[data-theme="light"] .input-icon { color: rgba(10,22,40,.35) !important; }
+[data-theme="light"] .input-wrap:focus-within .input-icon { color: #007a68 !important; }
+[data-theme="light"] .input-toggle { color: rgba(10,22,40,.35) !important; }
+[data-theme="light"] .input-toggle:hover { color: #007a68 !important; }
+
+/* SECURITY BADGE */
+[data-theme="light"] .security-badge {
+  background: rgba(0,138,120,.07) !important;
+  border-color: rgba(0,138,120,.25) !important;
+  color: #007a68 !important;
+}
+[data-theme="light"] .security-badge::before {
+  background: #007a68 !important;
+  box-shadow: none !important;
+}
+
+/* LINKS & BUTTONS */
+[data-theme="light"] .link { color: #007a68 !important; }
+[data-theme="light"] .link:hover { color: #0a1628 !important; text-shadow: none !important; }
+[data-theme="light"] .check-row { color: rgba(10,22,40,.5) !important; }
+[data-theme="light"] .auth-divider { color: rgba(10,22,40,.3) !important; }
+[data-theme="light"] .auth-divider::before,
+[data-theme="light"] .auth-divider::after { background: rgba(0,102,255,.12) !important; }
+[data-theme="light"] .btn-zk-ghost {
+  border-color: rgba(0,102,255,.2) !important;
+  color: rgba(10,22,40,.6) !important;
+}
+[data-theme="light"] .btn-zk-ghost:hover {
+  border-color: #007a68 !important;
+  color: #007a68 !important;
+  background: rgba(0,138,120,.06) !important;
+}
+
+/* CORNER BRACKETS */
+[data-theme="light"] .corner-tl,
+[data-theme="light"] .corner-br { border-color: #007a68 !important; }
+
+/* PASSWORD STRENGTH */
+[data-theme="light"] .strength-bar { background: rgba(0,0,0,.08) !important; }
+[data-theme="light"] .form-hint    { color: rgba(10,22,40,.4) !important; }
+
+/* ALERT */
+[data-theme="light"] .alert-custom.info {
+  background: rgba(0,102,255,.06) !important;
+  color: rgba(10,22,40,.7) !important;
+}
+[data-theme="light"] .alert-custom.warning {
+  background: rgba(245,158,11,.06) !important;
+  color: rgba(10,22,40,.7) !important;
+}
+
+/* REGISTER STEPS */
+[data-theme="light"] .step-dot {
+  background: #fff !important;
+  border-color: rgba(0,102,255,.2) !important;
+  color: rgba(10,22,40,.35) !important;
+}
+[data-theme="light"] .step-dot.active {
+  border-color: #007a68 !important;
+  color: #007a68 !important;
+  box-shadow: 0 0 10px rgba(0,138,120,.2) !important;
+}
+[data-theme="light"] .step-line      { background: rgba(0,102,255,.12) !important; }
+[data-theme="light"] .step-line.done { background: #007a68 !important; }
+
+/* DECORATIVE ELEMENTS — hide/dim in light */
+[data-theme="light"] .scanlines    { display: none !important; }
+[data-theme="light"] .data-stream  { opacity: .06 !important; }
+[data-theme="light"] .hex-float    { color: rgba(0,102,255,.05) !important; }
+[data-theme="light"] .float-mail   { opacity: .05 !important; }
+[data-theme="light"] .slash-bg     { opacity: .01 !important; }
+
+/* FORGOT / EXPIRED ICON BOX */
+[data-theme="light"] .icon-box.warning {
+  background: rgba(245,158,11,.08) !important;
+  border-color: rgba(245,158,11,.25) !important;
+}
+[data-theme="light"] .icon-box.success {
+  background: rgba(16,185,129,.08) !important;
+  border-color: rgba(16,185,129,.25) !important;
+}
+[data-theme="light"] .expired-icon {
+  background: rgba(255,45,85,.08) !important;
+  border-color: rgba(255,45,85,.2) !important;
+}
+
+/* EXPIRED PAGE */
+[data-theme="light"] .error-codes { background: #f8fafc; border-radius: 4px; }
+[data-theme="light"] .error-code-row { border-bottom-color: rgba(0,0,0,.06) !important; }
+[data-theme="light"] .code-key { color: rgba(10,22,40,.4) !important; }
+</style>
+
+{% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+{% block body %}{% endblock %}
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── CSRF Helper ──
+function getCsrfToken() {
+  return document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrftoken='))?.split('=')[1] || '';
+}
+
+// ── Theme ──
+function toggleTheme() {
+  const html = document.documentElement;
+  const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  localStorage.setItem('zkvault_theme', next);
+}
+
+// ── Toast ──
+let toastId = 0;
+function showToast(msg, type = 'info') {
+  const icons = { info:'fa-circle-info', success:'fa-check-circle', warning:'fa-triangle-exclamation', danger:'fa-circle-xmark' };
+  const colors = { info:'var(--blue-bright)', success:'var(--success)', warning:'var(--warning)', danger:'var(--danger)' };
+  const id = 'toast-' + (++toastId);
+  const el = document.createElement('div');
+  el.className = `toast-item ${type}`;
+  el.id = id;
+  el.innerHTML = `<i class="fa-solid ${icons[type]}" style="color:${colors[type]};font-size:15px"></i><span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(el);
+  requestAnimationFrame(() => { requestAnimationFrame(() => { el.classList.add('show'); }); });
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 3500);
+}
+
+// ── Password toggle ──
+function togglePass(id) {
+  const inp = document.getElementById(id);
+  if (inp) inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+// ── Password strength ──
+function updateStrength(val) {
+  const fill = document.getElementById('strengthFill');
+  const label = document.getElementById('strengthLabel');
+  if (!fill) return;
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (val.length >= 12) score++;
+  if (/[A-Z]/.test(val) && /[a-z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const levels = [
+    { w:'0%', c:'transparent', t:'Enter a password to see strength' },
+    { w:'20%', c:'#ef4444', t:'Very Weak' },
+    { w:'40%', c:'#f97316', t:'Weak' },
+    { w:'60%', c:'#f59e0b', t:'Fair' },
+    { w:'80%', c:'#10b981', t:'Strong' },
+    { w:'100%', c:'#06d6a0', t:'✓ Very Strong — vault-grade password' },
+  ];
+  const l = levels[Math.min(score, 5)];
+  fill.style.width = val ? l.w : '0%';
+  fill.style.background = l.c;
+  if (label) { label.textContent = val ? l.t : levels[0].t; label.style.color = l.c; }
+}
+
+// ── Mobile sidebar ──
+function openSidebar() {
+  document.getElementById('sidebar')?.classList.add('open');
+  document.getElementById('sidebarOverlay')?.classList.add('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar')?.classList.remove('open');
+  document.getElementById('sidebarOverlay')?.classList.remove('open');
+}
+
+// ── Show Django messages as toasts ──
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.django-message').forEach(el => {
+    showToast(el.dataset.message, el.dataset.type || 'info');
+  });
+});
+</script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
